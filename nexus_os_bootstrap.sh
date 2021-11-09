@@ -6,19 +6,15 @@
 # After installing the "Raspberry Pi OS with desktop" image, make sure the Pi has
 # access to the Internet, then open Terminal and run this command:
 #
-#	bash <(curl -sL https:\/\/raw.githubusercontent.com\/node-red\/linux-installers\/master\/deb\/update-nodejs-and-nodered
-#
-#
-#
-#
 
-function bootAndRunAgain () {
-	if [[ -s $AUTOSTART ]] 
-	then
-		sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/raw.githubusercontent.com\/node-red\/linux-installers\/master\/deb\/update-nodejs-and-nodered)'" $AUTOSTART
-	fi
-	shutdown -r now
-}
+
+#function bootAndRunAgain () {
+#	if [[ -s $AUTOSTART ]] 
+#	then
+#		sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/raw.githubusercontent.com\/node-red\/linux-installers\/master\/deb\/update-nodejs-and-nodered)'" $AUTOSTART
+#	fi
+#	shutdown -r now
+#}
 
 function checkInternet() {
 	# Check for Internet connectivity
@@ -38,23 +34,23 @@ then
 fi
 
 #######################################################################
-# Expand the filesystem if it is < 10 GB 
-PARTSIZE=$( df | sed -n '/root/{s/  */ /gp}' | cut -d ' ' -f2 )
-THRESHOLD=$((10 * 1024 * 1024))
-if (( $PARTSIZE < $THRESHOLD ))
-then
-	echo >&2 "Expanding root filesystem..."
-	sudo raspi-config --expand-rootfs
-	echo >&2 "Done. Rebooting. This script will autostart and continue setup after bootup."
-	sleep 5
-	bootAndRunAgain
-fi
+## Expand the filesystem if it is < 10 GB 
+#PARTSIZE=$( df | sed -n '/root/{s/  */ /gp}' | cut -d ' ' -f2 )
+#THRESHOLD=$((10 * 1024 * 1024))
+#if (( $PARTSIZE < $THRESHOLD ))
+#then
+#	echo >&2 "Expanding root filesystem..."
+#	sudo raspi-config --expand-rootfs
+#	echo >&2 "Done. Rebooting. This script will autostart and continue setup after bootup."
+#	sleep 5
+#	bootAndRunAgain
+#fi
 
 #######################################################################
-# Change password
-echo >&2 "Changing password to 'changeme'..."
-echo 'pi:changeme' | sudo chpasswd
-echo >&2 "Done."
+## Change password
+#echo >&2 "Changing password to 'changeme'..."
+#echo 'pi:changeme' | sudo chpasswd
+#echo >&2 "Done."
 
 #######################################################################
 # Enable source packages
@@ -259,10 +255,6 @@ sudo update-rc.d -f triggerhappy remove
 sudo systemctl disable triggerhappy.service
 sudo systemctl disable triggerhappy.socket
 echo >&2 "Done."
-
-
-
-
 
 
 
