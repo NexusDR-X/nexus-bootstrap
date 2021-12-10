@@ -372,6 +372,31 @@ sudo sed -i "/@pcmanfm .*/a @lxterminal -e '/usr/local/sbin/nexus_os_bootstrap1 
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
+## Generate a new VNC key
+echo >&2 "------>  Generate new VNC server key..."
+sudo vncserver-x11 -generatekeys force
+sudo systemctl restart vncserver-x11-serviced
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
+## Generate new SSH server keys
+sudo rm -v /etc/ssh/ssh_host* 
+echo >&2 "------>  Generate new SSH server key..."
+#sudo dpkg-reconfigure -f noninteractive openssh-server
+pushd . >/dev/null
+sudo rm -f /etc/ssh/ssh_host_*
+cd /etc/ssh
+sudo ssh-keygen -A
+sudo systemctl restart ssh >/dev/null 2>&1
+echo "Remove ssh client keys, authorized_keys and known_hosts"
+rm -f $HOME/.ssh/known_hosts
+rm -f $HOME/.ssh/authorized_keys
+rm -f $HOME/.ssh/id_*
+rm -f $HOME/.ssh/*~
+popd >/dev/null
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
 ## Restart
 echo >&2 "------>  Rebooting in 7 seconds..."
 sleep 7
