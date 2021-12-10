@@ -276,12 +276,13 @@ then
         	--field="Operator Name" "$MYNAME" \
         	--buttons-layout=center \
         	--button="Cancel":1 --button="OK":0)
-if [[ $? == 0 ]]
-then
-  	MYCALL="$(echo $MSG | awk 'BEGIN {FS="|" } { print $1 }')"
-	MYNAME="$(echo $MSG | awk 'BEGIN {FS="|" } { print $2 }')"
-else
-	SafeExit 0
+	if [[ $? == 0 ]]
+	then
+  		MYCALL="$(echo $MSG | awk 'BEGIN {FS="|" } { print $1 }')"
+		MYNAME="$(echo $MSG | awk 'BEGIN {FS="|" } { print $2 }')"
+	else
+		SafeExit 0
+	fi
 fi
 
 nexus-updater.sh libax25,ax25-apps,ax25-tools,hamlib,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
