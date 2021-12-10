@@ -147,9 +147,6 @@ NEXUS_AUDIO_GIT_URL="$GITHUB_URL/NexusDR-X/nexus-audio"
 declare -r TRUE=0
 declare -r FALSE=1
 SRC_DIR="/usr/local/src/nexus"
-sudo mkdir -p $SRC_DIR
-sudo chown -f -R $USER:$USER $SRC_DIR
-sudo mkdir -p /usr/local/share/applications
 TITLE="Nexus Bootstrap 1 - version $VERSION"
 RUN_IT=$FALSE
 AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
@@ -285,7 +282,8 @@ then
 	fi
 fi
 
-nexus-updater.sh libax25,ax25-apps,ax25-tools,hamlib,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
+nexus-updater.sh libax25,hamlib
+nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
 
 ####### Install nexus-utilities and set up desktops
 #nexus-updater.sh nexus-utilities,nexus-backup-restore

@@ -135,6 +135,7 @@ sudo apt-get update
 sudo apt-get -y autoremove
 sudo apt-get -y upgrade	
 sudo apt-get -y dist-upgrade
+sudo apt-get -y autoremove
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
@@ -235,8 +236,9 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Make the documentation and src directories.
-echo >&2 "------>  Make documentation folder..."
+echo >&2 "------>  Make documentation and desktop application folder..."
 sudo mkdir -p /usr/local/share/doc
+sudo mkdir -p /usr/local/share/applications
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
