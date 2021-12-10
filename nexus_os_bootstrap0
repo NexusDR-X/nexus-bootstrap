@@ -13,7 +13,9 @@
 GIT_URL="https://github.com"
 LOCAL_GIT_REPO_ROOT="/usr/local/src/nexus"
 NEXUS_AUDIO_GIT_URL="${GIT_URL}/NexusDR-X/nexus-audio.git"
+NEXUS_UPDATE_GIT_URL="https://github.com/NexusDR-X/nexus-update"
 NEXUS_BOOTSTRAP_GIT_URL="${GIT_URL}/NexusDR-X/nexus-bootstrap.git"
+AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
 
 #function bootAndRunAgain () {
 #	if [[ -s $AUTOSTART ]] 
@@ -127,7 +129,7 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Update installed packages
-echo >&2 "------>  Update installed packages..."
+echo >&2 "------>  Update installed OS and packages..."
 sudo apt-get -y clean
 sudo apt-get update
 sudo apt-get -y autoremove
@@ -137,11 +139,11 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Install additional packages
-echo >&2 "------>  Install required packages..."
+echo >&2 "------>  Install additional required packages for Nexus DR-X..."
 sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfat-utils \
 		yad dosfstools dos2unix xscreensaver autoconf automake libtool cmake \
 		extra-xdg-menus bc dnsutils libgtk-3-bin jq xdotool moreutils build-essential \
-		aptitude hdparm watchdog gettext
+		aptitude hdparm watchdog gettext git
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
@@ -232,8 +234,14 @@ sudo systemctl disable triggerhappy.socket
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
+## Make the documentation and src directories.
+echo >&2 "------>  Make documentation folder..."
+sudo mkdir -p /usr/local/share/doc
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
 ## Prepare local git repository folder
-echo >&2 "------>  Prepare local git repository folder..."
+echo >&2 "------>  Make local git repository root folder..."
 sudo mkdir -p "$LOCAL_GIT_REPO_ROOT"
 sudo  chown $USER:$USER "$LOCAL_GIT_REPO_ROOT"
 echo >&2 -e "------>  Done.\n______"
@@ -246,7 +254,7 @@ then
 	echo -e "# Enable Fe-Pi audio card\ndtoverlay=fe-pi-audio"  | sudo tee --append /boot/config.txt 1>/dev/null
 fi
 echo >&2 -e "------>  Done.\n______"
-echo >&2 "------>  Adding PulseAudio configuration for Fe-Pi Audio Hat..."
+echo >&2 "------>  Add nexus-audio repo (PulseAudio configuration for Fe-Pi Audio Hat)..."
 rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-audio"
 git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_AUDIO_GIT_URL"
 pushd . >/dev/null
@@ -257,10 +265,21 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Get the nexus-bootstrap repo
-echo >&2 "------>  Adding nexus-bootstrap repo..."
+echo >&2 "------>  Add nexus-bootstrap repo..."
 rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-bootstrap"
 git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_BOOTSTRAP_GIT_URL"
 sudo cp -f $LOCAL_GIT_REPO_ROOT/nexus-bootstrap/usr/local/sbin/* /usr/local/sbin/
+sudo cp -f $LOCAL_GIT_REPO_ROOT/nexus-bootstrap/nexus_os_bootstrap* /usr/local/sbin/
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
+## Get the nexus-update repo
+echo >&2 "------>  Add nexus-update repo..."
+rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-update"
+git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_UPDATE_GIT_URL"
+pushd . >/dev/null
+cd "$LOCAL_GIT_REPO_ROOT"
+nexus-update/nexus-install
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
@@ -345,7 +364,18 @@ echo >&2 "------>  Change hostname to nexusdr-x..."
 sudo raspi-config nonint do_hostname "nexusdr-x"
 echo >&2 -e "------>  Done.\n______"
 
+#######################################################################
+## Set autostart to launch nexus_os_bootstrap1 at next startup
+echo >&2 "------>  Set autostart to launch nexus_os_bootstrap1 at next startup..."
+#sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/nexusdr-x.github.io\/nexus-bootstrap\/nexus_os_bootstrap1)'" $AUTOSTART
+sudo sed -i "/@pcmanfm .*/a @lxterminal -e '/usr/local/sbin/nexus_os_bootstrap1 -f'" $AUTOSTART
+echo >&2 -e "------>  Done.\n______"
 
+#######################################################################
+## Restart
+echo >&2 "------>  Rebooting in 7 seconds..."
+sleep 7
+shutdown -r now
 
 
 

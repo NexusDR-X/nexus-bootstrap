@@ -1,0 +1,476 @@
+#!/usr/bin/env bash
+#================================================================
+# HEADER
+#================================================================
+#% SYNOPSIS
+#+   ${SCRIPT_NAME} [-hvf] 
+#%
+#% DESCRIPTION
+#%   This script updates setups up the Nexus image. It will erase most current settings
+#%   if they exist
+#%
+#% OPTIONS
+#%    -h, --help              Print this help
+#%    -v, --version           Print script information
+#%    -f, --force             Run script without printing warning message.
+#%    -c, --call					Optional operator call sign for Fldigi configuration
+#%                            Default: N0CALL
+#%    -n, --name              Optional operator name for Fldigi configuration
+#%                            Default: "No Name"
+#% 
+#% COMMANDS 
+#%    
+#%                                
+#% EXAMPLES
+#%    Run the script without printing warning message:
+#%
+#%      ${SCRIPT_NAME} -f
+#%
+#%    Run the script without printing warning message and set call and name to
+#%    non-default values:
+#%
+#%      ${SCRIPT_NAME} -f -c AG7GN -n "Steve M"
+#%      
+#================================================================
+#- IMPLEMENTATION
+#-    version         ${SCRIPT_NAME} 2.1.10
+#-    author          Steve Magnuson, AG7GN
+#-    license         CC-BY-SA Creative Commons License
+#-    script_id       0
+#-
+#================================================================
+#  HISTORY
+#     20201120 : Steve Magnuson : Script creation
+#     20210623 : Steve Magnuson : Add check to ensure running from X (GUI)
+#     20210626 : Steve Magnuson : Add new USE_GPIO_PTT variable to fldigi_def.xml
+# 
+#================================================================
+#  DEBUG OPTION
+#    set -n  # Uncomment to check your syntax, without execution.
+#    set -x  # Uncomment to debug this shell script
+#
+#================================================================
+# END_OF_HEADER
+#================================================================
+
+SYNTAX=false
+DEBUG=false
+Optnum=$#
+
+#============================
+#  FUNCTIONS
+#============================
+
+function TrapCleanup() {
+  [[ -d "${TMPDIR}" ]] && rm -rf "${TMPDIR}/"
+  exit 0
+}
+
+
+function SafeExit() {
+  # Exit with arg1
+  EXIT_CODE=${1:-0}
+  # Delete temp files, if any
+  [[ -d "${TMPDIR}" ]] && rm -rf "${TMPDIR}/"
+  trap - INT TERM EXIT
+  exit $EXIT_CODE
+}
+
+
+function ScriptInfo() { 
+	HEAD_FILTER="^#-"
+	[[ "$1" = "usage" ]] && HEAD_FILTER="^#+"
+	[[ "$1" = "full" ]] && HEAD_FILTER="^#[%+]"
+	[[ "$1" = "version" ]] && HEAD_FILTER="^#-"
+	head -${SCRIPT_HEADSIZE:-99} ${0} | grep -e "${HEAD_FILTER}" | \
+	sed -e "s/${HEAD_FILTER}//g" \
+	    -e "s/\${SCRIPT_NAME}/${SCRIPT_NAME}/g" \
+	    -e "s/\${SPEED}/${SPEED}/g" \
+	    -e "s/\${DEFAULT_PORTSTRING}/${DEFAULT_PORTSTRING}/g"
+}
+
+
+function Usage() { 
+	printf "Usage: "
+	ScriptInfo usage
+	SafeExit 0
+}
+
+
+function Die () {
+	echo "${*}"
+	SafeExit 1
+}
+
+function WaitFor() {
+
+   # Waits for a timeout to expire or a file to exist, whichever occurs first.
+   # If timer expires, returns $FALSE, otherwise returns $TRUE
+   # arg1: Path to file to look for
+   # arg2: (optional) Timeout in seconds. Default is 5
+
+   FILE_="$1"
+   local -i T=${2:-5}
+   while [[ ! -f "$FILE_" ]] && (( $T > 0 ))
+   do
+      sleep 1
+      ((T--))
+   done
+   (( $T == 0 )) && return $FALSE || return $TRUE
+}
+
+#============================
+#  FILES AND VARIABLES
+#============================
+
+# Set Temp Directory
+# -----------------------------------
+# Create temp directory with three random numbers and the process ID
+# in the name.  This directory is removed automatically at exit.
+# -----------------------------------
+TMPDIR="/tmp/${SCRIPT_NAME}.$RANDOM.$RANDOM.$RANDOM.$$"
+(umask 077 && mkdir "${TMPDIR}") || {
+  Die "Could not create temporary directory! Exiting."
+}
+
+  #== general variables ==#
+SCRIPT_NAME="$(basename ${0})" # scriptname without path
+SCRIPT_DIR="$( cd $(dirname "$0") && pwd )" # script directory
+SCRIPT_FULLPATH="${SCRIPT_DIR}/${SCRIPT_NAME}"
+SCRIPT_ID="$(ScriptInfo | grep script_id | tr -s ' ' | cut -d' ' -f3)"
+SCRIPT_HEADSIZE=$(grep -sn "^# END_OF_HEADER" ${0} | head -1 | cut -f1 -d:)
+VERSION="$(ScriptInfo version | grep version | tr -s ' ' | cut -d' ' -f 4)" 
+
+GITHUB_URL="https://github.com"
+NEXUS_UPDATER_GIT_URL="$GITHUB_URL/NexusDR-X/nexus-update"
+NEXUS_AUDIO_GIT_URL="$GITHUB_URL/NexusDR-X/nexus-audio"
+declare -r TRUE=0
+declare -r FALSE=1
+SRC_DIR="/usr/local/src/nexus"
+sudo mkdir -p $SRC_DIR
+sudo chown -f -R $USER:$USER $SRC_DIR
+sudo mkdir -p /usr/local/share/applications
+TITLE="Nexus Bootstrap 1 - version $VERSION"
+RUN_IT=$FALSE
+AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
+
+#============================
+#  PARSE OPTIONS WITH GETOPTS
+#============================
+
+Optnum=$#
+  
+#== set short options ==#
+SCRIPT_OPTS=':c:fhn:v-:'
+
+#== set long options associated with short one ==#
+typeset -A ARRAY_OPTS
+ARRAY_OPTS=(
+	[call]=c
+	[name]=n
+	[help]=h
+	[version]=v
+	[string]=s
+	[port]=p
+)
+
+LONG_OPTS="^($(echo "${!ARRAY_OPTS[@]}" | tr ' ' '|'))="
+
+# Parse options
+while getopts ${SCRIPT_OPTS} OPTION
+do
+	# Translate long options to short
+	if [[ "x$OPTION" == "x-" ]]
+	then
+		LONG_OPTION=$OPTARG
+		LONG_OPTARG=$(echo $LONG_OPTION | egrep "$LONG_OPTS" | cut -d'=' -f2-)
+		LONG_OPTIND=-1
+		[[ "x$LONG_OPTARG" = "x" ]] && LONG_OPTIND=$OPTIND || LONG_OPTION=$(echo $OPTARG | cut -d'=' -f1)
+		[[ $LONG_OPTIND -ne -1 ]] && eval LONG_OPTARG="\$$LONG_OPTIND"
+		OPTION=${ARRAY_OPTS[$LONG_OPTION]}
+		[[ "x$OPTION" = "x" ]] &&  OPTION="?" OPTARG="-$LONG_OPTION"
+		
+		if [[ $( echo "${SCRIPT_OPTS}" | grep -c "${OPTION}:" ) -eq 1 ]]; then
+			if [[ "x${LONG_OPTARG}" = "x" ]] || [[ "${LONG_OPTARG}" = -* ]]; then 
+				OPTION=":" OPTARG="-$LONG_OPTION"
+			else
+				OPTARG="$LONG_OPTARG";
+				if [[ $LONG_OPTIND -ne -1 ]]; then
+					[[ $OPTIND -le $Optnum ]] && OPTIND=$(( $OPTIND+1 ))
+					shift $OPTIND
+					OPTIND=1
+				fi
+			fi
+		fi
+	fi
+
+	# Options followed by another option instead of argument
+	if [[ "x${OPTION}" != "x:" ]] && [[ "x${OPTION}" != "x?" ]] && [[ "${OPTARG}" = -* ]]
+	then 
+		OPTARG="$OPTION" OPTION=":"
+	fi
+
+	# Finally, manage options
+	case "$OPTION" in
+	   c)
+	      MYCALL="$OPTARG"
+	      ;;
+		h) 
+			ScriptInfo full
+			SafeExit 0
+			;;
+	   n)
+	      MYNAME="$OPTARG"
+	      ;;
+		v) 
+			ScriptInfo version
+			SafeExit 0
+			;;
+		f) 
+			RUN_IT=$TRUE
+			;;
+		:) 
+			Die "${SCRIPT_NAME}: -$OPTARG: option requires an argument"
+			;;
+		?) 
+			Die "${SCRIPT_NAME}: -$OPTARG: unknown option"
+			;;
+	esac
+done
+shift $((${OPTIND} - 1)) ## shift options
+
+
+#============================
+#  MAIN SCRIPT
+#============================
+
+trap SafeExit EXIT INT TERM SIGINT
+
+# Remove any existing reference to this script from $AUTOSTART
+# because we only want to run this once
+sudo sed -i "/@lxterminal .*${SCRIPT_NAME}.*/d" $AUTOSTART
+
+[[ -z $MYCALL ]] && MYCALL="N0CALL"
+[[ -z $MYNAME ]] && MYNAME="No One"
+
+[ -z $DISPLAY ] && Die "${SCRIPT_NAME}: Must be run from lxterminal or xterm in a GUI, not via SSH or from the console."
+
+if [[ $RUN_IT == $FALSE ]]
+then
+	echo >&2 "This script is part 2 of a bootstrap process for initial setup of"
+	echo >&2 "Nexus DR-X. If run with the -f option, it will overwrite MANY configuration"
+	echo >&2 "settings, so use with care. "
+	echo >&2
+	echo >&2 "Run this script again with -f if you REALLY want to run it."
+	echo >&2
+	SafeExit 0
+fi
+
+if [[ $MYCALL == "N0CALL" ]]
+then
+	MSG=$(yad --center --borders=20 \
+        	--title="$TITLE" --text-align=center \
+        	--text="<b>Minimal configuration of Fldigi, Flmsg, etc.</b>" \
+        	--form --item-separator='~' \
+        	--field="Operator Callsign" "$MYCALL" \
+        	--field="Operator Name" "$MYNAME" \
+        	--buttons-layout=center \
+        	--button="Cancel":1 --button="OK":0)
+if [[ $? == 0 ]]
+then
+  	MYCALL="$(echo $MSG | awk 'BEGIN {FS="|" } { print $1 }')"
+	MYNAME="$(echo $MSG | awk 'BEGIN {FS="|" } { print $2 }')"
+else
+	SafeExit 0
+fi
+
+nexus-updater.sh libax25,ax25-apps,ax25-tools,hamlib,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
+
+####### Install nexus-utilities and set up desktops
+#nexus-updater.sh nexus-utilities,nexus-backup-restore
+
+for DESKTOP in /usr/local/share/applications/*.template
+do
+	sed -e "s/_LEFT_RADIO_/left radio/g" \
+	 	-e "s/_RIGHT_RADIO_/right radio/g" \
+		$DESKTOP | sudo tee ${DESKTOP%%.*}.desktop 1>/dev/null
+done
+
+####### Set up desktop background
+#edit-desktop.sh -c "$MYCALL"
+
+####### Set up Fldigi to use PulseAudio with Fe-Pi sound card.
+rm -rf $HOME/.nbems
+rm -rf $HOME/.fltk
+
+declare -A USE_GPIO_PTT
+USE_GPIO_PTT[left]=1
+USE_GPIO_PTT[right]=1
+
+declare -A GPIO_STATE
+GPIO_STATE[left]=8192
+GPIO_STATE[right]=16
+
+declare -A KISS_IO_PORT
+KISS_IO_PORT[left]=7342
+KISS_IO_PORT[right]=7344
+
+declare -A KISS_OUT_PORT
+KISS_OUT_PORT[left]=7343
+KISS_OUT_PORT[right]=7345
+
+declare -A ARQ_PORT
+ARQ_PORT[left]=7322
+ARQ_PORT[right]=7323
+
+declare -A XML_PORT
+XML_PORT[left]=7362
+XML_PORT[right]=7363
+
+declare -A FLRIG_PORT
+FLRIG_PORT[left]=12345
+FLRIG_PORT[right]=12346
+
+declare -A XMLLOG_PORT
+XMLLOG_PORT[left]=8421
+XMLLOG_PORT[right]=8422
+
+declare -A FLMSG_WEB_PORT
+FLMSG_WEB_PORT[left]=8080
+FLMSG_WEB_PORT[right]=8090
+
+declare -A REVERSEAUDIO
+REVERSEAUDIO[left]=0
+REVERSEAUDIO[right]=1
+
+for SIDE in left right
+do
+
+	# Fldigi
+	echo >&2 "Initializing Fldigi $SIDE"
+   rm -rf $HOME/.fldigi-$SIDE
+   rm -rf $HOME/.nbems-$SIDE
+   fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
+   PID_FLDIGI=$!
+	sleep 2
+   while pgrep fldigi >/dev/null 2>&1
+   do
+      WID=$(xdotool search --pid $PID_FLDIGI 2>/dev/null)
+      [[ ! -z $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
+   done
+   WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml || Die "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."
+   pkill -SIGTERM fldigi
+   FLMSG_STRING="/usr/local/bin/flmsg --flmsg-dir /home/pi/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
+	sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
+   -e "s/<ALERTDEVICE>.*<\/ALERTDEVICE>/<ALERTDEVICE>system-audio-playback<\/ALERTDEVICE>/" \
+   -e "s/<ALERTINDEX>.*<\/ALERTINDEX>/<ALERTINDEX>10<\/ALERTINDEX>/" \
+	-e "s/<AUDIOIO>.*<\/AUDIOIO>/<AUDIOIO>2<\/AUDIOIO>/" \
+	-e "s/<ENABLE_AUDIO_ALERTS>.*<\/ENABLE_AUDIO_ALERTS>/<ENABLE_AUDIO_ALERTS>0<\/ENABLE_AUDIO_ALERTS>/" \
+   -e "s/<PORTINDEVICE>.*<\/PORTINDEVICE>/<PORTINDEVICE>pulse<\/PORTINDEVICE>/" \
+   -e "s/<PORTININDEX>.*<\/PORTININDEX>/<PORTININDEX>-1<\/PORTININDEX>/" \
+   -e "s/<PORTOUTDEVICE>.*<\/PORTOUTDEVICE>/<PORTOUTDEVICE><\/PORTOUTDEVICE>/" \
+   -e "s/<PORTOUTINDEX>.*<\/PORTOUTINDEX>/<PORTOUTINDEX>-1<\/PORTOUTINDEX>/" \
+   -e "s/<USE_GPIO_PTT>.*<\/USE_GPIO_PTT>/<USE_GPIO_PTT>${USE_GPIO_PTT[$SIDE]}<\/USE_GPIO_PTT>/" \
+   -e "s/<ENABLE_GPIO>.*<\/ENABLE_GPIO>/<ENABLE_GPIO>${GPIO_STATE[$SIDE]}<\/ENABLE_GPIO>/" \
+   -e "s/<GPIO_STATE>.*<\/GPIO_STATE>/<GPIO_STATE>${GPIO_STATE[$SIDE]}<\/GPIO_STATE>/" \
+   -e "s/<XMLRPC_PORT>.*<\/XMLRPC_PORT>/<XMLRPC_PORT>${XML_PORT[$SIDE]}<\/XMLRPC_PORT>/" \
+-e "s/<KISS_IO_PORT>.*<\/KISS_IO_PORT>/<KISS_IO_PORT>${KISS_IO_PORT[$SIDE]}<\/KISS_IO_PORT>/" \
+   -e "s/<KISS_OUT_PORT>.*<\/KISS_OUT_PORT>/<KISS_OUT_PORT>${KISS_OUT_PORT[$SIDE]}<\/KISS_OUT_PORT>/" \
+   -e "s/<ARQ_PORT>.*<\/ARQ_PORT>/<ARQ_PORT>${ARQ_PORT[$SIDE]}<\/ARQ_PORT>/" \
+   -e "s/<FLRIG_IP_PORT>.*<\/FLRIG_IP_PORT>/FLRIG_IP_PORT>${FLRIG_PORT[$SIDE]}<\/FLRIG_IP_PORT>/" \
+   -e "s/<XMLLOG_PORT>.*<\/XMLLOG_PORT>/XMLLOG_PORT>${XMLLOG_PORT[$SIDE]}<\/XMLLOG_PORT>/" \
+   -e "s/<FSQLOWERCASE>.*<\/FSQLOWERCASE>/<FSQLOWERCASE>1<\/FSQLOWERCASE>/" \
+   -e "s/<FSQSHOWMONITOR>.*<\/FSQSHOWMONITOR>/<FSQSHOWMONITOR>1<\/FSQSHOWMONITOR>/" \
+   -e "s|<FLMSG_PATHNAME>.*</FLMSG_PATHNAME>|<FLMSG_PATHNAME>$FLMSG_STRING</FLMSG_PATHNAME>|" \
+   -e "s/<REVERSEAUDIO>.*<\/REVERSEAUDIO>/<REVERSEAUDIO>${REVERSEAUDIO[$SIDE]}<\/REVERSEAUDIO>/" \
+   -e "s/<REVERSERXAUDIO>.*<\/REVERSERXAUDIO>/<REVERSERXAUDIO>${REVERSEAUDIO[$SIDE]}<\/REVERSERXAUDIO>/" \
+   -e "s/<MYCALL>.*<\/MYCALL>/<MYCALL>$MYCALL<\/MYCALL>/" \
+   -e "s/<MYNAME>.*<\/MYNAME>/<MYNAME>$MYNAME<\/MYNAME>/" \
+   -e "s/<OPERCALL>.*<\/OPERCALL>/<OPERCALL>$MYCALL<\/OPERCALL>/" \
+   $HOME/.fldigi-$SIDE/fldigi_def.xml 
+	echo >&2 "Fldigi $SIDE Done."
+	
+	echo >&2 -e "\n=======================================\n"
+	
+	# Flrig
+	rm -rf $HOME/.flrig-$SIDE
+	echo >&2 "Initializing Flrig $SIDE"
+	flrig --debug-level 0 --config-dir $HOME/.flrig-$SIDE &
+   PID_=$!
+   sleep 2
+   FLRIG_WINDOWS="$(xdotool search --pid $PID_ 2>/dev/null | sort -r | xargs)"
+   for WID in $FLRIG_WINDOWS
+   do
+   	xdotool windowclose $WID >/dev/null 2>&1
+   done
+   pkill -SIGTERM flrig
+   sed -i -e "s/^xmlport:.*/xmlport:${FLRIG_PORT[$SIDE]}/" $HOME/.flrig-$SIDE/NONE.prefs
+   echo "xmlport:${FLRIG_PORT[$SIDE]}" >> $HOME/.flrig-$SIDE/flrig.prefs
+   for S in $(grep -ho "^[a-z].*trace" $HOME/.flrig-$SIDE/*.prefs | sort | uniq)
+   do
+   	sed -i -e "s/^$S:1/$S:0/" $HOME/.flrig-$SIDE/*.prefs
+   done
+	echo >&2 "Flrig $SIDE Done."
+	
+	echo >&2 -e "\n=======================================\n"
+	
+	# Flmsg
+	echo >&2 "Initializing Flmsg $SIDE"
+   flmsg --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
+   PID_=$!
+   sleep 4
+   WID=$(xdotool search --pid $PID_ 2>/dev/null)
+   xdotool windowclose $WID >/dev/null 2>&1
+   sleep 1
+   for WID in $(xdotool search --name "flmsg")
+   do
+      xdotool windowclose $WID >/dev/null 2>&1
+	   sleep 2
+   done
+   WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs || Die "$HOME/.nbems-$SIDE/FLMSG.prefs never created."
+	pkill -SIGTERM flmsg
+   sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
+          -e "s/^mycall:.*/mycall:$MYCALL/" \
+          -e "s/^myname:.*/myname:$MYNAME/" \
+   $HOME/.nbems-$SIDE/FLMSG.prefs
+	echo >&2 "Flmsg $SIDE Done."
+
+	echo >&2 -e "\n=======================================\n"
+	
+	# Flamp
+	echo >&2 "Initializing Flamp $SIDE"
+   fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
+   sleep 7
+   flamp --config-dir $HOME/.nbems-$SIDE --xmlrpc-server-port ${XML_PORT[$SIDE]} >/dev/null 2>&1 &
+   PID_=$!
+   sleep 3
+   for WID in $(xdotool search --pid $PID_ | sort -r)
+   do
+	   xdotool windowclose $WID >/dev/null 2>&1
+	   sleep 1
+   done
+   pkill -SIGTERM flamp
+	pkill -SIGTERM fldigi
+   WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs || Die "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."
+   sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
+   		-e "s/^socket_port:.*/xmlrpc_port:${ARQ_PORT[$SIDE]}/" \
+         -e "s/^mycall:.*/mycall:$MYCALL/" \
+         -e "s/^myinfo:.*/myinfo:$MYNAME/" \
+   $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs
+	echo >&2 "Flamp $SIDE Done."
+	
+	echo >&2 -e "\n=======================================\n"
+	
+	# Flarq
+	echo >&2 "Initializing Flarq $SIDE"
+   sudo sed -i -e "s/arq-server-port.*/arq-server-port ${ARQ_PORT[$SIDE]}/" \
+   		/usr/local/share/applications/flarq-$SIDE.desktop \
+   		/usr/local/share/applications/flarq-$SIDE.template
+	echo >&2 "Flarq $SIDE Done."
+	echo >&2 -e "\n=======================================\n"
+done
+
+#rm -f $HOME/DO_NOT_DELETE_THIS_FILE
+echo >&2 "Initialization complete. Close this Terminal window."
+#shutdown -r now
+
