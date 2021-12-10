@@ -244,6 +244,7 @@ echo >&2 -e "------>  Done.\n______"
 echo >&2 "------>  Make local git repository root folder..."
 sudo mkdir -p "$LOCAL_GIT_REPO_ROOT"
 sudo  chown $USER:$USER "$LOCAL_GIT_REPO_ROOT"
+git config --global pull.rebase.false
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
