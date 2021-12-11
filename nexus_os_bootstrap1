@@ -284,6 +284,14 @@ fi
 MYCALL="${MYCALL^^}"
 
 edit-desktop.sh -c "$MYCALL"
+eval $(grep -E "_bg|_shadow" /usr/local/src/nexus/nexus-utils/desktop-items-0.conf)
+if [[ -n $desktop_bg && -n $desktop_shadow ]] 
+then
+	sed -i -e "s/^desktop_bg=.*/desktop_bg=${desktop_bg}/" \
+		-e "s/^desktop_shadow=.*/desktop_shadow=${desktop_shadow}/"
+		$HOME/.config/pcmanfm/LXDE-pi/ desktop-items-0.conf
+	pcmanfm --reconfigure
+fi
 
 nexus-updater.sh libax25,hamlib
 nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
