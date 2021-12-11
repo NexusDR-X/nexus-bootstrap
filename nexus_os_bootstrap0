@@ -72,9 +72,10 @@ echo >&2 "------>  Found Bullseye ${OS_BITS}-bit Operating System"
 
 #######################################################################
 ## Make the documentation and src directories.
-echo >&2 "------>  Make documentation and desktop application folder..."
+echo >&2 "------>  Make doc, application, $HOME/.config/nexus config folders..."
 sudo mkdir -p /usr/local/share/doc
 sudo mkdir -p /usr/local/share/applications
+mkdir -p $HOME/.config/nexus
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
@@ -94,6 +95,12 @@ do
 	sudo raspi-config nonint $I 0
 	echo >&2 -e "------>  Done.\n______"
 done
+
+#######################################################################
+## Disable Screen Blanking
+echo >&2 "------>  Disable screen blanking..."
+sudo raspi-config nonint do_blanking 1
+echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Change terminal Settings
@@ -150,7 +157,7 @@ echo >&2 -e "------>  Done.\n______"
 ## Install additional packages
 echo >&2 "------>  Install additional required packages for Nexus DR-X..."
 sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfat-utils \
-		yad dosfstools dos2unix xscreensaver autoconf automake libtool cmake \
+		yad dosfstools dos2unix autoconf automake libtool cmake \
 		extra-xdg-menus bc dnsutils libgtk-3-bin jq xdotool moreutils build-essential \
 		aptitude hdparm watchdog gettext git imagemagick
 echo >&2 -e "------>  Done.\n______"
