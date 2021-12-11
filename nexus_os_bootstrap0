@@ -324,7 +324,7 @@ echo >&2 "------>  Set desktop background..."
 cp ${LOCAL_GIT_REPO_ROOT}/nexus-bootstrap/Pictures/*.jpg $HOME/Pictures/
 mkdir -p $HOME/.config/pcmanfm/LXDE-pi
 cp ${LOCAL_GIT_REPO_ROOT}/nexus-bootstrap/config/pcmanfm/LXDE-pi/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE-pi/
-sed -i -e "s|_HOME_|$HOME/Pictures|" $HOME/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
+sed -i -e "s|_HOME_|$HOME|" $HOME/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
 pcmanfm --reconfigure
 echo >&2 -e "------>  Done.\n______"
 
