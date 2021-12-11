@@ -289,7 +289,7 @@ if [[ -n $desktop_bg ]] && [[ -n $desktop_shadow ]]
 then
 	echo >&2 "Fix desktop background color"
 	sed -i -e "s/^desktop_bg=.*/desktop_bg=${desktop_bg}/" \
-		-e "s/^desktop_shadow=.*/desktop_shadow=${desktop_shadow}/"
+		-e "s/^desktop_shadow=.*/desktop_shadow=${desktop_shadow}/" \
 		$HOME/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
 	pcmanfm --reconfigure
 fi
