@@ -283,6 +283,8 @@ then
 fi
 MYCALL="${MYCALL^^}"
 
+edit-desktop.sh -c "$MYCALL"
+
 nexus-updater.sh libax25,hamlib
 nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
 

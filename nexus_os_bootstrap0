@@ -14,6 +14,7 @@ GIT_URL="https://github.com"
 LOCAL_GIT_REPO_ROOT="/usr/local/src/nexus"
 NEXUS_AUDIO_GIT_URL="${GIT_URL}/NexusDR-X/nexus-audio.git"
 NEXUS_UPDATE_GIT_URL="https://github.com/NexusDR-X/nexus-update"
+NEXUS_UTILS_GIT_URL="https://github.com/NexusDR-X/nexus-utils"
 NEXUS_BOOTSTRAP_GIT_URL="${GIT_URL}/NexusDR-X/nexus-bootstrap.git"
 AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
 
@@ -68,6 +69,13 @@ eval $(cat /etc/*-release)
 	{ echo >&2 "This script will only with RaspiOS \"Bullseye\" OS"; exit 1; }
 OS_BITS=$(getconf LONG_BIT)
 echo >&2 "------>  Found Bullseye ${OS_BITS}-bit Operating System"
+
+#######################################################################
+## Make the documentation and src directories.
+echo >&2 "------>  Make documentation and desktop application folder..."
+sudo mkdir -p /usr/local/share/doc
+sudo mkdir -p /usr/local/share/applications
+echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Enable source packages
@@ -144,7 +152,7 @@ echo >&2 "------>  Install additional required packages for Nexus DR-X..."
 sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfat-utils \
 		yad dosfstools dos2unix xscreensaver autoconf automake libtool cmake \
 		extra-xdg-menus bc dnsutils libgtk-3-bin jq xdotool moreutils build-essential \
-		aptitude hdparm watchdog gettext git
+		aptitude hdparm watchdog gettext git imagemagick
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
@@ -235,13 +243,6 @@ sudo systemctl disable triggerhappy.socket
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
-## Make the documentation and src directories.
-echo >&2 "------>  Make documentation and desktop application folder..."
-sudo mkdir -p /usr/local/share/doc
-sudo mkdir -p /usr/local/share/applications
-echo >&2 -e "------>  Done.\n______"
-
-#######################################################################
 ## Prepare local git repository folder
 echo >&2 "------>  Make local git repository root folder..."
 sudo mkdir -p "$LOCAL_GIT_REPO_ROOT"
@@ -286,6 +287,16 @@ nexus-update/nexus-install
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
+## Get the nexus-utils repo
+echo >&2 "------>  Add nexus-utils repo..."
+rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-utils"
+git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_UTILS_GIT_URL"
+pushd . >/dev/null
+cd "$LOCAL_GIT_REPO_ROOT"
+nexus-utils/nexus-install
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
 ## Add cronjob to check for presence of DO_NOT_DELETE_THIS_FILE
 echo >&2 "------>  Add cronjob to check for DO_NOT_DELETE_THIS_FILE file at startup..."
 WHO="$USER"
@@ -307,26 +318,28 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Check piano switch at startup
-echo >&2 "------>  Add lxsession autostart task to check piano switch state at startup..."
-AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
-if [[ -s $AUTOSTART ]] 
-then
-	if ! grep -q check-piano.sh $AUTOSTART 2>/dev/null
-	then
-		sudo sed -i '/@pcmanfm .*/a @bash \/usr\/local\/sbin\/check-piano.sh' $AUTOSTART
-	fi
-fi
-echo >&2 -e "------>  Done.\n______"
+# This is done by the nexus-utils/nexus-install script
+#echo >&2 "------>  Add lxsession autostart task to check piano switch state at startup..."
+#AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
+#if [[ -s $AUTOSTART ]] 
+#then
+#	if ! grep -q check-piano.sh $AUTOSTART 2>/dev/null
+#	then
+#		sudo sed -i '/@pcmanfm .*/a @bash \/usr\/local\/sbin\/check-piano.sh' $AUTOSTART
+#	fi
+#fi
+#echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Desktop background
-echo >&2 "------>  Set desktop background..."
-cp ${LOCAL_GIT_REPO_ROOT}/nexus-bootstrap/Pictures/*.jpg $HOME/Pictures/
-mkdir -p $HOME/.config/pcmanfm/LXDE-pi
-cp ${LOCAL_GIT_REPO_ROOT}/nexus-bootstrap/config/pcmanfm/LXDE-pi/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE-pi/
-sed -i -e "s|_HOME_|$HOME|" $HOME/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
-pcmanfm --reconfigure
-echo >&2 -e "------>  Done.\n______"
+# This is done by the nexus-utils/nexus-install script
+#echo >&2 "------>  Set desktop background..."
+#cp ${LOCAL_GIT_REPO_ROOT}/nexus-bootstrap/Pictures/*.jpg $HOME/Pictures/
+#mkdir -p $HOME/.config/pcmanfm/LXDE-pi
+#cp ${LOCAL_GIT_REPO_ROOT}/nexus-bootstrap/config/pcmanfm/LXDE-pi/desktop-items-0.conf $HOME/.config/pcmanfm/LXDE-pi/
+#sed -i -e "s|_HOME_|$HOME|" $HOME/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
+#pcmanfm --reconfigure
+#echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Make .vimrc file
@@ -398,6 +411,12 @@ rm -f $HOME/.ssh/authorized_keys
 rm -f $HOME/.ssh/id_*
 rm -f $HOME/.ssh/*~
 popd >/dev/null
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
+## Set version (current date in YYYYMMDD format)
+echo >&2 "------>  Set version..."
+echo "NEXUS_VERSION=$(date +"%Y%m%d")_DIY" | sudo tee /boot/nexus.txt 1>/dev/null
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
