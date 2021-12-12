@@ -296,7 +296,7 @@ do
 	pushd . >/dev/null
 	cd "$LOCAL_GIT_REPO_ROOT"
 	${R}/nexus-install
-	popd . >/dev/null
+	popd >/dev/null
 	echo >&2 -e "------>  Done.\n______"
 done
 
