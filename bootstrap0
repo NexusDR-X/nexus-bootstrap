@@ -73,9 +73,11 @@ echo >&2 "------>  Found Bullseye ${OS_BITS}-bit Operating System"
 
 #######################################################################
 ## Make the documentation and src directories.
-echo >&2 "------>  Make doc, application, $HOME/.config/nexus config folders..."
+echo >&2 "------>  Make various folders..."
 sudo mkdir -p /usr/local/share/doc
 sudo mkdir -p /usr/local/share/applications
+sudo mkdir -p /usr/local/share/nexus
+sudo chown $USER:$USER /usr/local/share/nexus
 mkdir -p $HOME/.config/nexus
 echo >&2 -e "------>  Done.\n______"
 
@@ -300,23 +302,23 @@ done
 
 #######################################################################
 ## Get the nexus-update repo
-echo >&2 "------>  Add nexus-update repo..."
-rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-update"
-git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_UPDATE_GIT_URL"
-pushd . >/dev/null
-cd "$LOCAL_GIT_REPO_ROOT"
-nexus-update/nexus-install
-echo >&2 -e "------>  Done.\n______"
+#echo >&2 "------>  Add nexus-update repo..."
+#rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-update"
+#git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_UPDATE_GIT_URL"
+#pushd . >/dev/null
+#cd "$LOCAL_GIT_REPO_ROOT"
+#nexus-update/nexus-install
+#echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Get the nexus-utils repo
-echo >&2 "------>  Add nexus-utils repo..."
-rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-utils"
-git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_UTILS_GIT_URL"
-pushd . >/dev/null
-cd "$LOCAL_GIT_REPO_ROOT"
-nexus-utils/nexus-install
-echo >&2 -e "------>  Done.\n______"
+#echo >&2 "------>  Add nexus-utils repo..."
+#rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-utils"
+#git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_UTILS_GIT_URL"
+#pushd . >/dev/null
+#cd "$LOCAL_GIT_REPO_ROOT"
+#nexus-utils/nexus-install
+#echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Add cronjob to check for presence of DO_NOT_DELETE_THIS_FILE
