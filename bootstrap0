@@ -390,9 +390,9 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Set autostart to launch nexus_os_bootstrap1 at next startup
-echo >&2 "------>  Set autostart to launch nexus_os_bootstrap1 at next startup..."
+echo >&2 "------>  Set autostart to launch bootstrap1 at next startup..."
 #sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/nexusdr-x.github.io\/nexus-bootstrap\/nexus_os_bootstrap1)'" $AUTOSTART
-sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/nexus_os_bootstrap1 -f" $AUTOSTART
+sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/bootstrap1 -f" $AUTOSTART
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
