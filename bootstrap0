@@ -282,7 +282,6 @@ echo >&2 -e "------>  Done.\n______"
 echo >&2 "------>  Add nexus-bootstrap repo..."
 rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-bootstrap"
 git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_BOOTSTRAP_GIT_URL"
-sudo cp -f $LOCAL_GIT_REPO_ROOT/nexus-bootstrap/usr/local/sbin/* /usr/local/sbin/
 sudo cp -f $LOCAL_GIT_REPO_ROOT/nexus-bootstrap/bootstrap* /usr/local/sbin/
 echo >&2 -e "------>  Done.\n______"
 
