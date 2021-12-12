@@ -295,7 +295,7 @@ do
 	git -C "$LOCAL_GIT_REPO_ROOT" clone "https://github.com/NexusDR-X/$R"
 	pushd . >/dev/null
 	cd "$LOCAL_GIT_REPO_ROOT"
-	nexus-update/nexus-install
+	${R}/nexus-install
 	popd . >/dev/null
 	echo >&2 -e "------>  Done.\n______"
 done
