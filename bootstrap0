@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.0.3
+# version 1.0.4
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -162,7 +162,7 @@ echo >&2 "------>  Install additional required packages for Nexus DR-X..."
 sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfat-utils \
 		yad dosfstools dos2unix autoconf automake libtool cmake \
 		extra-xdg-menus bc dnsutils libgtk-3-bin jq xdotool moreutils build-essential \
-		aptitude hdparm watchdog gettext git imagemagick
+		aptitude hdparm watchdog gettext git imagemagick socat
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
