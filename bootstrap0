@@ -67,7 +67,7 @@ function CheckInternet() {
 ## Determine OS
 eval $(cat /etc/*-release)
 [[ ${VERSION_CODENAME^^} != "BULLSEYE" ]] && \
-	{ echo >&2 "This script will only with RaspiOS \"Bullseye\" OS"; exit 1; }
+	{ echo >&2 "This script will only run with RaspiOS \"Bullseye\" OS"; exit 1; }
 OS_BITS=$(getconf LONG_BIT)
 echo >&2 "------>  Found Bullseye ${OS_BITS}-bit Operating System"
 
@@ -134,8 +134,9 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ##  Add nexusdr-x apt repo and prefer it 
 echo >&2 "------>  Add Nexus DR-X apt Repository..."
-curl -s --compressed "https://nexusdr-x.github.io/nexus_bullseye_ppa/KEY.gpg" | sudo apt-key add -
-sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list "https://nexusdr-x.github.io/nexus_bullseye_ppa/nexus.list"
+GITHUBIO_PPA_URL="https://nexusdr-x.github.io/nexus_bullseye_ppa"
+curl -s --compressed "${GITHUBIO_PPA_URL}/KEY.gpg" | sudo apt-key add -
+sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list "${GITHUBIO_PPA_URL}/nexus.list"
 cat > /tmp/99nexus << EOF
 Package: *
 Pin: origin nexusdr-x.github.io
@@ -437,6 +438,11 @@ echo "NEXUS_VERSION=\"$NEXUS_VERSION\" built $(date '+%Y-%m-%d %H:%M %Z')" | sud
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
+## Pause
+echo >&2 "------>  Rebooting in 7 seconds..."
+sleep 7
+
+#######################################################################
 ## Set autostart to launch nexus_os_bootstrap1 at next startup
 echo >&2 "------>  Set autostart to launch bootstrap1 at next startup..."
 #sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/nexusdr-x.github.io\/nexus-bootstrap\/nexus_os_bootstrap1)'" $AUTOSTART
@@ -444,9 +450,7 @@ sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/bootstrap1 -f" $AUTOS
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
-## Restart
-echo >&2 "------>  Rebooting in 7 seconds..."
-sleep 7
+## Reboot
 shutdown -r now
 
 
