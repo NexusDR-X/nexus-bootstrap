@@ -106,6 +106,14 @@ sudo raspi-config nonint do_blanking 1
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
+## Set VNC Resolution
+echo >&2 "------>  Set VNC resolution..."
+#sudo raspi-config nonint do_vnc_resolution "1280x720"
+#sudo raspi-config nonint do_vnc_resolution "800x600"
+sudo raspi-config nonint do_vnc_resolution "1920x1080"
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
 ## Change terminal Settings
 echo >&2 "------>  Configure lxterminal settings..."
 CONFIG="$HOME/.config/lxterminal/lxterminal.conf"
