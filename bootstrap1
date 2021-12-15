@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.1.10
+#-    version         ${SCRIPT_NAME} 2.1.11
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -293,6 +293,9 @@ then
 		$HOME/.config/pcmanfm/LXDE-pi/desktop-items-0.conf
 	pcmanfm --reconfigure
 fi
+
+# Adjust ALSA settings for Fe-Pi
+setalsa.sh
 
 nexus-updater.sh libax25,hamlib
 nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
