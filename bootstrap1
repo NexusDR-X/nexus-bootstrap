@@ -295,7 +295,7 @@ then
 fi
 
 # Adjust ALSA settings for Fe-Pi
-setalsa.sh
+set_fepi.sh
 
 nexus-updater.sh libax25,hamlib
 nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
