@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.1.11
+#-    version         ${SCRIPT_NAME} 2.1.12
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -263,12 +263,20 @@ then
 	SafeExit 0
 fi
 
+MSG_TEXT="<b>Minimal configuration of Fldigi, Flmsg, etc.
+<span color='blue'>After you click OK, various windows 
+will open and close automatically as the script 
+minimally configures the FLDigi suite apps.
+You'll see a notification once the configuration is completed.</span>
+
+<span color='red'>DO NOT touch your keyboard or mouse until this process completes!</span></b>
+"
+
 if [[ $MYCALL == "N0CALL" ]]
 then
 	MSG=$(yad --center --borders=20 \
-        	--title="$TITLE" --text-align=center \
-        	--text="<b>Minimal configuration of Fldigi, Flmsg, etc.</b>" \
-        	--form --item-separator='~' \
+        	--title="Nexus DR-X Bootstrap part 2 of 2" --text-align=center \
+        	--text="$MSG_TEXT" --form \
         	--field="Operator Callsign" "$MYCALL" \
         	--field="Operator Name" "$MYNAME" \
         	--buttons-layout=center \
@@ -483,6 +491,18 @@ do
 	echo >&2 "Flarq $SIDE Done."
 	echo >&2 -e "\n=======================================\n"
 done
+
+MSG_TEXT="<b><span color='blue'>Nexus DR-X bootstrap complete</span></b>
+
+Click <b>Open Main Menu Editor</b> below to customize your <b>Main</b> and <b>Hamradio</b> menu layouts.
+
+<b><span color='RED'>CAUTION:</span> DO NOT</b> click <b>Cancel</b> in the <b>Main Menu Editor</b>! Doing so will reset the menu to default settings."
+
+yad --info --center --text-align=center --buttons-layout=center \
+	--title="Nexus DR-X Bootstrap part 2 of 2" \
+   --text="$MSG_TEXT" \
+   --borders=10 --button="Open Menu Main Editor":1 --button="Close":0
+(( $? == 1 )) && alacarte 2>/dev/null &
 
 #rm -f $HOME/DO_NOT_DELETE_THIS_FILE
 echo >&2 "Initialization complete. Close this Terminal window."
