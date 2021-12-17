@@ -502,7 +502,7 @@ yad --info --center --text-align=center --buttons-layout=center \
 	--title="Nexus DR-X Bootstrap part 2 of 2" \
    --text="$MSG_TEXT" \
    --borders=10 --button="Open Menu Main Editor":1 --button="Close":0
-(( $? == 1 )) && alacarte 2>/dev/null &
+(( $? == 1 )) && gtk-launch alacarte 2>/dev/null
 
 #rm -f $HOME/DO_NOT_DELETE_THIS_FILE
 echo >&2 "Initialization complete. Close this Terminal window."
