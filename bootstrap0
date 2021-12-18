@@ -345,7 +345,7 @@ WHEN="@reboot"
 WHAT="sleep 5 && /usr/local/sbin/initialize-pi.sh"
 JOB="$WHEN $WHAT"
 cat <(fgrep -i -v "$WHAT" <(sudo crontab -u $WHO -l)) <(echo "$JOB") | sudo crontab -u $WHO -
-echo "Initialized on $(date)" > $HOME/DO_NOT_DELETE_THIS_FILE
+echo "Initialized on $(date '+%Y-%m-%d %H:%M %Z')" > $HOME/DO_NOT_DELETE_THIS_FILE
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
@@ -450,7 +450,7 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ## Set version (current date in YYYYMMDD format)
 echo >&2 "------>  Set version..."
-echo "NEXUS_VERSION=\"$NEXUS_VERSION\\nBuilt $(date '+%Y-%m-%d %H:%M %Z')\\n\\n${VERSION_CODENAME^} ${OS_BITS}-bit\"" | sudo tee /boot/nexus.txt 1>/dev/null
+echo "NEXUS_VERSION=\"$NEXUS_VERSION RaspiOS ${VERSION_CODENAME^} ${OS_BITS}-bit\\n\\nBuilt $(date '+%Y-%m-%d %H:%M %Z')\"" | sudo tee /boot/nexus.txt 1>/dev/null
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
