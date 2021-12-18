@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.0.5
+# version 1.0.6
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -442,7 +442,7 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ## Set version (current date in YYYYMMDD format)
 echo >&2 "------>  Set version..."
-echo "NEXUS_VERSION=\"$NEXUS_VERSION\" built $(date '+%Y-%m-%d %H:%M %Z')" | sudo tee /boot/nexus.txt 1>/dev/null
+echo "NEXUS_VERSION=\"$NEXUS_VERSION built $(date '+%Y-%m-%d %H:%M %Z')\"" | sudo tee /boot/nexus.txt 1>/dev/null
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
