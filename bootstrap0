@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.0.6
+# version 1.0.7
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -17,7 +17,7 @@ NEXUS_UPDATE_GIT_URL="https://github.com/NexusDR-X/nexus-update"
 NEXUS_UTILS_GIT_URL="https://github.com/NexusDR-X/nexus-utils"
 NEXUS_BOOTSTRAP_GIT_URL="${GIT_URL}/NexusDR-X/nexus-bootstrap.git"
 AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
-NEXUS_VERSION="20211212"
+NEXUS_VERSION="20211218"
 
 #function bootAndRunAgain () {
 #	if [[ -s $AUTOSTART ]] 
@@ -140,11 +140,19 @@ CheckInternet
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
-##  Add nexusdr-x apt repo and prefer it 
+##  Add nexusdr-x apt repo and prefer it over other repos
 echo >&2 "------>  Add Nexus DR-X apt Repository..."
 GITHUBIO_PPA_URL="https://nexusdr-x.github.io/nexus_bullseye_ppa"
-curl -s --compressed "${GITHUBIO_PPA_URL}/KEY.gpg" | sudo apt-key add -
-sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list "${GITHUBIO_PPA_URL}/nexus.list"
+NEXUS_LIST="nexus.list"
+KEY_PATH="/usr/share/keyrings/nexus-archive-keyring.gpg"
+## 'apt-key add' has been deprecated
+#curl -s --compressed "${GITHUBIO_PPA_URL}/KEY.gpg" | sudo apt-key add -
+#sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list #"${GITHUBIO_PPA_URL}/nexus.list"
+# Here's the new way to add an apt repo and key:
+curl -s --compressed "${GITHUBIO_PPA_URL}/KEY.gpg" | sudo gpg --dearmor | sudo tee ${KEY_PATH} 1>/dev/null
+curl -s -o /tmp/${NEXUS_LIST} ${GITHUBIO_PPA_URL}/${NEXUS_LIST}
+sed -i -e "s|^deb |deb [signed-by=${KEY_PATH}] |" /tmp/${NEXUS_LIST}
+sudo mv -f /tmp/${NEXUS_LIST} /etc/apt/sources.list.d/
 cat > /tmp/99nexus << EOF
 Package: *
 Pin: origin nexusdr-x.github.io
@@ -442,7 +450,7 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ## Set version (current date in YYYYMMDD format)
 echo >&2 "------>  Set version..."
-echo "NEXUS_VERSION=\"$NEXUS_VERSION built $(date '+%Y-%m-%d %H:%M %Z')\"" | sudo tee /boot/nexus.txt 1>/dev/null
+echo "NEXUS_VERSION=\"$NEXUS_VERSION\\nBuilt $(date '+%Y-%m-%d %H:%M %Z')\\n\\n${VERSION_CODENAME^} ${OS_BITS}-bit\"" | sudo tee /boot/nexus.txt 1>/dev/null
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
