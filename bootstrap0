@@ -142,15 +142,15 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ##  Add nexusdr-x apt repo and prefer it over other repos
 echo >&2 "------>  Add Nexus DR-X apt Repository..."
-GITHUBIO_PPA_URL="https://nexusdr-x.github.io/nexus_bullseye_ppa"
+GITHUBIO_REPO_URL="https://nexusdr-x.github.io/nexus-repo"
 NEXUS_LIST="nexus.list"
 KEY_PATH="/usr/share/keyrings/nexus-archive-keyring.gpg"
 ## 'apt-key add' has been deprecated
-#curl -s --compressed "${GITHUBIO_PPA_URL}/KEY.gpg" | sudo apt-key add -
-#sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list #"${GITHUBIO_PPA_URL}/nexus.list"
+#curl -s --compressed "${GITHUBIO_REPO_URL}/KEY.gpg" | sudo apt-key add -
+#sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list #"${GITHUBIO_REPO_URL}/nexus.list"
 # Here's the new way to add an apt repo and key:
-curl -s --compressed "${GITHUBIO_PPA_URL}/KEY.gpg" | sudo gpg --dearmor | sudo tee ${KEY_PATH} 1>/dev/null
-curl -s -o /tmp/${NEXUS_LIST} ${GITHUBIO_PPA_URL}/${NEXUS_LIST}
+curl -s --compressed "${GITHUBIO_REPO_URL}/KEY.gpg" | sudo gpg --dearmor | sudo tee ${KEY_PATH} 1>/dev/null
+curl -s -o /tmp/${NEXUS_LIST} ${GITHUBIO_REPO_URL}/${NEXUS_LIST}
 sed -i -e "s|^deb |deb [signed-by=${KEY_PATH}] |" /tmp/${NEXUS_LIST}
 sudo mv -f /tmp/${NEXUS_LIST} /etc/apt/sources.list.d/
 cat > /tmp/99nexus << EOF
