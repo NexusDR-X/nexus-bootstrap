@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.0.7
+# version 1.0.8
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -142,7 +142,7 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ##  Add nexusdr-x apt repo and prefer it over other repos
 echo >&2 "------>  Add Nexus DR-X apt Repository..."
-GITHUBIO_REPO_URL="https://nexusdr-x.github.io/nexus-repo"
+GITHUBIO_REPO_URL="https://nexusdr-x.github.io/bullseye-repo"
 NEXUS_LIST="nexus.list"
 KEY_PATH="/usr/share/keyrings/nexus-archive-keyring.gpg"
 ## 'apt-key add' has been deprecated
