@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.1.13
+#-    version         ${SCRIPT_NAME} 2.1.14
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -305,13 +305,18 @@ fi
 # Adjust ALSA settings for Fe-Pi
 set_fepi.sh
 
+# Hold packages that will interfere with certain Nexus packages
+sudo apt-mark hold wsjtx-data # Interferes with wsjtx
+sudo apt-mark hold libhamlib4 libhamlib-utils # Interferes with hamlib
+
+# Run the Updater to install commonly used apps
 nexus-updater.sh libax25,hamlib
 nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
 
 ####### Install nexus-utilities and set up desktops
 #nexus-updater.sh nexus-utilities,nexus-backup-restore
 
-for DESKTOP in /usr/local/share/applications/*.template
+for DESKTOP in /usr/share/applications/*.template
 do
 	sed -e "s/_LEFT_RADIO_/left radio/g" \
 	 	-e "s/_RIGHT_RADIO_/right radio/g" \
@@ -321,7 +326,7 @@ done
 ####### Set up desktop background
 #edit-desktop.sh -c "$MYCALL"
 
-####### Set up Fldigi to use PulseAudio with Fe-Pi sound card.
+####### Set up Fldigi suite.
 rm -rf $HOME/.nbems
 rm -rf $HOME/.fltk
 
@@ -382,7 +387,7 @@ do
    done
    WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml || Die "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."
    pkill -SIGTERM fldigi
-   FLMSG_STRING="/usr/local/bin/flmsg --flmsg-dir /home/pi/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
+   FLMSG_STRING="/usr/bin/flmsg --flmsg-dir /home/pi/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
 	sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
    -e "s/<ALERTDEVICE>.*<\/ALERTDEVICE>/<ALERTDEVICE>system-audio-playback<\/ALERTDEVICE>/" \
    -e "s/<ALERTINDEX>.*<\/ALERTINDEX>/<ALERTINDEX>10<\/ALERTINDEX>/" \
@@ -459,7 +464,7 @@ do
 
 	echo >&2 -e "\n=======================================\n"
 	
-	# Flamp
+	# Flamp (Fldigi must be running to start Flamp)
 	echo >&2 "Initializing Flamp $SIDE"
    fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
    sleep 7
@@ -486,8 +491,8 @@ do
 	# Flarq
 	echo >&2 "Initializing Flarq $SIDE"
    sudo sed -i -e "s/arq-server-port.*/arq-server-port ${ARQ_PORT[$SIDE]}/" \
-   		/usr/local/share/applications/flarq-$SIDE.desktop \
-   		/usr/local/share/applications/flarq-$SIDE.template
+   		/usr/share/applications/flarq-$SIDE.desktop \
+   		/usr/share/applications/flarq-$SIDE.template
 	echo >&2 "Flarq $SIDE Done."
 	echo >&2 -e "\n=======================================\n"
 done
