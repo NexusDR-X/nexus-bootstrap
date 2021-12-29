@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.1.14
+#-    version         ${SCRIPT_NAME} 2.1.15
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -306,8 +306,8 @@ fi
 set_fepi.sh
 
 # Hold packages that will interfere with certain Nexus packages
-sudo apt-mark hold wsjtx-data # Interferes with wsjtx
-sudo apt-mark hold libhamlib4 libhamlib-utils # Interferes with hamlib
+#sudo apt-mark hold wsjtx-data # Interferes with wsjtx
+
 
 # Run the Updater to install commonly used apps
 nexus-updater.sh libax25,hamlib
