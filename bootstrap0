@@ -17,7 +17,7 @@ NEXUS_UPDATE_GIT_URL="https://github.com/NexusDR-X/nexus-update"
 NEXUS_UTILS_GIT_URL="https://github.com/NexusDR-X/nexus-utils"
 NEXUS_BOOTSTRAP_GIT_URL="${GIT_URL}/NexusDR-X/nexus-bootstrap.git"
 AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
-NEXUS_VERSION="20211218"
+NEXUS_VERSION="20211229"
 
 #function bootAndRunAgain () {
 #	if [[ -s $AUTOSTART ]] 
