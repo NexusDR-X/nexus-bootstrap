@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.1.15
+#-    version         ${SCRIPT_NAME} 2.2.0
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -41,9 +41,12 @@
 #================================================================
 #  HISTORY
 #     20201120 : Steve Magnuson : Script creation
-#     20210623 : Steve Magnuson : Add check to ensure running from X (GUI)
-#     20210626 : Steve Magnuson : Add new USE_GPIO_PTT variable to fldigi_def.xml
-# 
+#     20210623 : Steve Magnuson : Add check to ensure running 
+#                                 from X (GUI)
+#     20210626 : Steve Magnuson : Add new USE_GPIO_PTT variable 
+#                                 to fldigi_def.xml
+# 		20211231 : Steve Magnuson : Modified target desktop folders
+#
 #================================================================
 #  DEBUG OPTION
 #    set -n  # Uncomment to check your syntax, without execution.
@@ -147,7 +150,7 @@ NEXUS_AUDIO_GIT_URL="$GITHUB_URL/NexusDR-X/nexus-audio"
 declare -r TRUE=0
 declare -r FALSE=1
 SRC_DIR="/usr/local/src/nexus"
-TITLE="Nexus Bootstrap 1 - version $VERSION"
+TITLE="Nexus DR-X Bootstrap part 2 of 2"
 RUN_IT=$FALSE
 AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
 
@@ -275,7 +278,7 @@ You'll see a notification once the configuration is completed.</span>
 if [[ $MYCALL == "N0CALL" ]]
 then
 	MSG=$(yad --center --borders=20 \
-        	--title="Nexus DR-X Bootstrap part 2 of 2" --text-align=center \
+        	--title="$TITLE" --text-align=center \
         	--text="$MSG_TEXT" --form \
         	--field="Operator Callsign" "$MYCALL" \
         	--field="Operator Name" "$MYNAME" \
@@ -504,7 +507,7 @@ Click <b>Open Main Menu Editor</b> below to customize your <b>Main</b> and <b>Ha
 <b><span color='RED'>CAUTION:</span> DO NOT</b> click <b>Cancel</b> in the <b>Main Menu Editor</b>! Doing so will reset the menu to default settings."
 
 yad --info --center --text-align=center --buttons-layout=center \
-	--title="Nexus DR-X Bootstrap part 2 of 2" \
+	--title="$TITLE" \
    --text="$MSG_TEXT" \
    --borders=10 --button="Open Menu Main Editor":1 --button="Close":0
 (( $? == 1 )) && setsid gtk-launch alacarte &>/dev/null
