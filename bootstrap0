@@ -17,7 +17,7 @@ NEXUS_UPDATE_GIT_URL="https://github.com/NexusDR-X/nexus-update"
 NEXUS_UTILS_GIT_URL="https://github.com/NexusDR-X/nexus-utils"
 NEXUS_BOOTSTRAP_GIT_URL="${GIT_URL}/NexusDR-X/nexus-bootstrap.git"
 AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
-NEXUS_VERSION="20220101"
+NEXUS_VERSION="20220101.1"
 
 #function bootAndRunAgain () {
 #	if [[ -s $AUTOSTART ]] 
@@ -257,9 +257,9 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ## Add 'nocomposite' to KMS driver so that VNC will work (too slow otherwise)
 ## See: https://forums.raspberrypi.com/viewtopic.php?t=323294
-echo >&2 "------>  Add 'nocomposite' to DRM VC4 V3D KMS driver so VNC will work..."
-sudo sed -i -e "s/^dtoverlay=vc4-kms-v3d$/dtoverlay=vc4-kms-v3d,nocomposite/" /boot/config.txt
-echo >&2 -e "------>  Done.\n______"
+#echo >&2 "------>  Add 'nocomposite' to DRM VC4 V3D KMS driver so VNC will work..."
+#sudo sed -i -e "s/^dtoverlay=vc4-kms-v3d$/dtoverlay=vc4-kms-v3d,nocomposite/" /boot/config.txt
+#echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Real Time Clock
