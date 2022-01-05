@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.1
+#-    version         ${SCRIPT_NAME} 2.2.2
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -392,8 +392,6 @@ do
    pkill -SIGTERM fldigi
    FLMSG_STRING="/usr/bin/flmsg --flmsg-dir /home/pi/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
 	sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
-   -e "s/<ALERTDEVICE>.*<\/ALERTDEVICE>/<ALERTDEVICE>sysdefault<\/ALERTDEVICE>/" \
-   -e "s/<ENABLE_AUDIO_ALERTS>.*<\/ENABLE_AUDIO_ALERTS>/<ENABLE_AUDIO_ALERTS>1<\/ENABLE_AUDIO_ALERTS>/" \
 	-e "s/<AUDIOIO>.*<\/AUDIOIO>/<AUDIOIO>2<\/AUDIOIO>/" \
 	-e "s/<high_signal_level>.*<\/high_signal_level>/<high_signal_level>-5<\/high_signal_level>/" \
 	-e "s/<over_signal_level>.*<\/over_signal_level>/<over_signal_level>-2<\/over_signal_level>/" \
