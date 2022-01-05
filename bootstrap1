@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.2
+#-    version         ${SCRIPT_NAME} 2.2.3
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -470,7 +470,7 @@ do
 	# Flamp (Fldigi must be running to start Flamp)
 	echo >&2 "Initializing Flamp $SIDE"
    fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
-   sleep 7
+   sleep 10
    flamp --config-dir $HOME/.nbems-$SIDE --xmlrpc-server-port ${XML_PORT[$SIDE]} >/dev/null 2>&1 &
    PID_=$!
    sleep 3
