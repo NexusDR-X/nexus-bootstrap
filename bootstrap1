@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.3
+#-    version         ${SCRIPT_NAME} 2.2.4
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -390,7 +390,7 @@ do
    done
    WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml || Die "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."
    pkill -SIGTERM fldigi
-   FLMSG_STRING="/usr/bin/flmsg --flmsg-dir /home/pi/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
+   FLMSG_STRING="/usr/bin/flmsg --flmsg-dir $HOME/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
 	sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
 	-e "s/<AUDIOIO>.*<\/AUDIOIO>/<AUDIOIO>2<\/AUDIOIO>/" \
 	-e "s/<high_signal_level>.*<\/high_signal_level>/<high_signal_level>-5<\/high_signal_level>/" \
