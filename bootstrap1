@@ -382,7 +382,7 @@ do
    rm -rf $HOME/.nbems-$SIDE
    fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
    PID_FLDIGI=$!
-	sleep 2
+	sleep 5
    while pgrep fldigi >/dev/null 2>&1
    do
       WID=$(xdotool search --pid $PID_FLDIGI 2>/dev/null)
@@ -427,7 +427,7 @@ do
 	echo >&2 "Initializing Flrig $SIDE"
 	flrig --debug-level 0 --config-dir $HOME/.flrig-$SIDE &
    PID_=$!
-   sleep 2
+   sleep 5
    FLRIG_WINDOWS="$(xdotool search --pid $PID_ 2>/dev/null | sort -r | xargs)"
    for WID in $FLRIG_WINDOWS
    do
