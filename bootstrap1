@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.5
+#-    version         ${SCRIPT_NAME} 2.2.6
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -113,13 +113,21 @@ function WaitFor() {
    # arg2: (optional) Timeout in seconds. Default is 5
 
    FILE_="$1"
+   echo "Waiting for ${FILE_}..."
    local -i T=${2:-5}
    while [[ ! -f "$FILE_" ]] && (( $T > 0 ))
    do
       sleep 1
       ((T--))
    done
-   (( $T == 0 )) && return $FALSE || return $TRUE
+   if (( $T == 0 ))
+   then
+      echo "ERROR: Timeout waiting for ${FILE_}" 
+      return $FALSE
+   else
+      echo "File ${FILE_} found." 
+      return $TRUE
+   fi
 }
 
 #============================
@@ -382,12 +390,17 @@ do
    rm -rf $HOME/.nbems-$SIDE
    fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
    PID_FLDIGI=$!
-	sleep 5
+	#sleep 5
+   echo "fldigi running as PID $PID_FLDIGI"
+   echo -n "Waiting for fldigi"
    while pgrep fldigi >/dev/null 2>&1
    do
+      echo -n "."
       WID=$(xdotool search --pid $PID_FLDIGI 2>/dev/null)
-      [[ ! -z $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
+      [[ -n $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
+      sleep 2
    done
+   echo "OK"
    WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml 10 || Die "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."
    pkill -SIGTERM fldigi
    FLMSG_STRING="/usr/bin/flmsg --flmsg-dir $HOME/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
@@ -427,12 +440,22 @@ do
 	echo >&2 "Initializing Flrig $SIDE"
 	flrig --debug-level 0 --config-dir $HOME/.flrig-$SIDE &
    PID_=$!
-   sleep 5
-   FLRIG_WINDOWS="$(xdotool search --pid $PID_ 2>/dev/null | sort -r | xargs)"
-   for WID in $FLRIG_WINDOWS
+   echo "flrig running as PID $PID_"
+   echo -n "Waiting for flrig"
+   while pgrep flrig >/dev/null 2>&1
    do
-   	xdotool windowclose $WID >/dev/null 2>&1
+      sleep 2
+      echo -n "."
+      FLRIG_WINDOWS="$(xdotool search --pid $PID_ 2>/dev/null | sort | xargs)"
+      if [[ -n $FLRIG_WINDOWS ]]
+      then
+         for WID in $FLRIG_WINDOWS
+         do
+   	      xdotool windowclose $WID 2>/dev/null 1>/dev/null
+         done
+      fi
    done
+   echo "OK"
    pkill -SIGTERM flrig
    sed -i -e "s/^xmlport:.*/xmlport:${FLRIG_PORT[$SIDE]}/" $HOME/.flrig-$SIDE/NONE.prefs
    echo "xmlport:${FLRIG_PORT[$SIDE]}" >> $HOME/.flrig-$SIDE/flrig.prefs
@@ -448,16 +471,23 @@ do
 	echo >&2 "Initializing Flmsg $SIDE"
    flmsg --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
    PID_=$!
-   sleep 4
-   WID=$(xdotool search --pid $PID_ 2>/dev/null)
-   xdotool windowclose $WID >/dev/null 2>&1
-   sleep 1
-   for WID in $(xdotool search --name "flmsg")
+   echo "flmsg running as PID $PID_"
+   echo -n "Waiting for flmsg to close"
+   while pgrep flmsg >/dev/null 2>&1
    do
-      xdotool windowclose $WID >/dev/null 2>&1
-	   sleep 2
+      sleep 2
+      echo -n "."
+      WID=$(xdotool search --pid $PID_ 2>/dev/null)
+      [[ -n $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
    done
-   WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs || Die "$HOME/.nbems-$SIDE/FLMSG.prefs never created."
+   echo "OK"
+   #sleep 1
+   #for WID in $(xdotool search --name "flmsg")
+   #do
+   #   xdotool windowclose $WID >/dev/null 2>&1
+	#   sleep 2
+   #done
+   WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs 10 || Die "$HOME/.nbems-$SIDE/FLMSG.prefs never created."
 	pkill -SIGTERM flmsg
    sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
           -e "s/^mycall:.*/mycall:$MYCALL/" \
@@ -469,19 +499,35 @@ do
 	
 	# Flamp (Fldigi must be running to start Flamp)
 	echo >&2 "Initializing Flamp $SIDE"
+   echo "Starting fldigi"
    fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
-   sleep 10
+   echo -n "Waiting for fldigi to complete startup"
+   while ! ss -plnt state listening | grep -E ":${XML_PORT[$SIDE]}.*fldigi" &>/dev/null
+   do
+      sleep 1
+      echo -n "."
+   done
+   echo "OK"
+   echo "Starting flamp"
    flamp --config-dir $HOME/.nbems-$SIDE --xmlrpc-server-port ${XML_PORT[$SIDE]} >/dev/null 2>&1 &
    PID_=$!
-   sleep 3
-   for WID in $(xdotool search --pid $PID_ | sort -r)
+   echo "flamp running as PID $PID_"
+   while pgrep flamp &>/dev/null
    do
-	   xdotool windowclose $WID >/dev/null 2>&1
+      FLAMP_WIDS="$(xdotool search --pid $PID_ | sort -r | xargs)"
+      if [[ -n $FLAMP_WIDS ]]
+      then
+         for WID in $FLAMP_WIDS
+         do
+	         xdotool windowclose $WID >/dev/null 2>&1
+         done
+      fi
 	   sleep 1
    done
+   echo "OK"
+   WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs 10 || Die "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."
    pkill -SIGTERM flamp
 	pkill -SIGTERM fldigi
-   WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs || Die "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."
    sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
    		-e "s/^socket_port:.*/xmlrpc_port:${ARQ_PORT[$SIDE]}/" \
          -e "s/^mycall:.*/mycall:$MYCALL/" \
