@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.6
+#-    version         ${SCRIPT_NAME} 2.2.7
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -103,6 +103,10 @@ function Usage() {
 function Die () {
 	echo "${*}"
 	SafeExit 1
+}
+
+function Failed () {
+	echo "${*}"
 }
 
 function WaitFor() {
@@ -381,169 +385,192 @@ declare -A REVERSEAUDIO
 REVERSEAUDIO[left]=0
 REVERSEAUDIO[right]=1
 
-for SIDE in left right
+COMPLETED="FALSE"
+
+while [[ $COMPLETED == "FALSE" ]]
 do
+	for APP in fldigi flrig flamp flmsg
+	do
+		pkill -SIGTERM $APP
+	done
+	for SIDE in left right
+	do
+		COMPLETED="FALSE"
+		# Fldigi
+		echo >&2 "Initializing Fldigi $SIDE"
+		rm -rf $HOME/.fldigi-$SIDE
+		rm -rf $HOME/.nbems-$SIDE
+		fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
+		PID_FLDIGI=$!
+		echo "fldigi running as PID $PID_FLDIGI"
+		echo -n "Waiting for fldigi"
+		END=$((SECONDS+20))
+		while pgrep fldigi >/dev/null 2>&1 && (( $SECONDS < $END ))
+		do
+			echo -n "."
+			WID=$(xdotool search --pid $PID_FLDIGI 2>/dev/null)
+			[[ -n $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
+			sleep 1
+		done
+		(( $SECONDS > $END )) && break
+		echo "OK"
+		WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml 10 || { echo  "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."; break; }
+		FLMSG_STRING="/usr/bin/flmsg --flmsg-dir $HOME/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
+		sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
+		-e "s/<AUDIOIO>.*<\/AUDIOIO>/<AUDIOIO>2<\/AUDIOIO>/" \
+		-e "s/<high_signal_level>.*<\/high_signal_level>/<high_signal_level>-5<\/high_signal_level>/" \
+		-e "s/<over_signal_level>.*<\/over_signal_level>/<over_signal_level>-2<\/over_signal_level>/" \
+		-e "s/<ENABLE_AUDIO_ALERTS>.*<\/ENABLE_AUDIO_ALERTS>/<ENABLE_AUDIO_ALERTS>0<\/ENABLE_AUDIO_ALERTS>/" \
+		-e "s/<PORTINDEVICE>.*<\/PORTINDEVICE>/<PORTINDEVICE>pulse<\/PORTINDEVICE>/" \
+		-e "s/<PORTININDEX>.*<\/PORTININDEX>/<PORTININDEX>-1<\/PORTININDEX>/" \
+		-e "s/<PORTOUTDEVICE>.*<\/PORTOUTDEVICE>/<PORTOUTDEVICE><\/PORTOUTDEVICE>/" \
+		-e "s/<PORTOUTINDEX>.*<\/PORTOUTINDEX>/<PORTOUTINDEX>-1<\/PORTOUTINDEX>/" \
+		-e "s/<USE_GPIO_PTT>.*<\/USE_GPIO_PTT>/<USE_GPIO_PTT>${USE_GPIO_PTT[$SIDE]}<\/USE_GPIO_PTT>/" \
+		-e "s/<ENABLE_GPIO>.*<\/ENABLE_GPIO>/<ENABLE_GPIO>${GPIO_STATE[$SIDE]}<\/ENABLE_GPIO>/" \
+		-e "s/<GPIO_STATE>.*<\/GPIO_STATE>/<GPIO_STATE>${GPIO_STATE[$SIDE]}<\/GPIO_STATE>/" \
+		-e "s/<XMLRPC_PORT>.*<\/XMLRPC_PORT>/<XMLRPC_PORT>${XML_PORT[$SIDE]}<\/XMLRPC_PORT>/" \
+	-e "s/<KISS_IO_PORT>.*<\/KISS_IO_PORT>/<KISS_IO_PORT>${KISS_IO_PORT[$SIDE]}<\/KISS_IO_PORT>/" \
+		-e "s/<KISS_OUT_PORT>.*<\/KISS_OUT_PORT>/<KISS_OUT_PORT>${KISS_OUT_PORT[$SIDE]}<\/KISS_OUT_PORT>/" \
+		-e "s/<ARQ_PORT>.*<\/ARQ_PORT>/<ARQ_PORT>${ARQ_PORT[$SIDE]}<\/ARQ_PORT>/" \
+		-e "s/<FLRIG_IP_PORT>.*<\/FLRIG_IP_PORT>/FLRIG_IP_PORT>${FLRIG_PORT[$SIDE]}<\/FLRIG_IP_PORT>/" \
+		-e "s/<XMLLOG_PORT>.*<\/XMLLOG_PORT>/XMLLOG_PORT>${XMLLOG_PORT[$SIDE]}<\/XMLLOG_PORT>/" \
+		-e "s/<FSQLOWERCASE>.*<\/FSQLOWERCASE>/<FSQLOWERCASE>1<\/FSQLOWERCASE>/" \
+		-e "s/<FSQSHOWMONITOR>.*<\/FSQSHOWMONITOR>/<FSQSHOWMONITOR>1<\/FSQSHOWMONITOR>/" \
+		-e "s|<FLMSG_PATHNAME>.*</FLMSG_PATHNAME>|<FLMSG_PATHNAME>$FLMSG_STRING</FLMSG_PATHNAME>|" \
+		-e "s/<REVERSEAUDIO>.*<\/REVERSEAUDIO>/<REVERSEAUDIO>${REVERSEAUDIO[$SIDE]}<\/REVERSEAUDIO>/" \
+		-e "s/<REVERSERXAUDIO>.*<\/REVERSERXAUDIO>/<REVERSERXAUDIO>${REVERSEAUDIO[$SIDE]}<\/REVERSERXAUDIO>/" \
+		-e "s/<MYCALL>.*<\/MYCALL>/<MYCALL>$MYCALL<\/MYCALL>/" \
+		-e "s/<MYNAME>.*<\/MYNAME>/<MYNAME>$MYNAME<\/MYNAME>/" \
+		-e "s/<OPERCALL>.*<\/OPERCALL>/<OPERCALL>$MYCALL<\/OPERCALL>/" \
+		$HOME/.fldigi-$SIDE/fldigi_def.xml 
+		echo >&2 "Fldigi $SIDE Done."
+	
+		echo >&2 -e "\n=======================================\n"
+	
+		# Flrig
+		rm -rf $HOME/.flrig-$SIDE
+		echo >&2 "Initializing Flrig $SIDE"
+		flrig --debug-level 0 --config-dir $HOME/.flrig-$SIDE &
+		PID_=$!
+		echo "flrig running as PID $PID_"
+		echo -n "Waiting for flrig"
+		END=$((SECONDS+20))
+		while pgrep flrig >/dev/null 2>&1 && (( $SECONDS < $END ))
+		do
+			sleep 1
+			echo -n "."
+			FLRIG_WINDOWS="$(xdotool search --pid $PID_ 2>/dev/null | sort | xargs)"
+			if [[ -n $FLRIG_WINDOWS ]]
+			then
+				for WID in $FLRIG_WINDOWS
+				do
+					xdotool windowclose $WID 2>/dev/null 1>/dev/null
+				done
+			fi
+		done
+		(( $SECONDS > $END )) && break
+		echo "OK"
+		sed -i -e "s/^xmlport:.*/xmlport:${FLRIG_PORT[$SIDE]}/" $HOME/.flrig-$SIDE/NONE.prefs
+		echo "xmlport:${FLRIG_PORT[$SIDE]}" >> $HOME/.flrig-$SIDE/flrig.prefs
+		for S in $(grep -ho "^[a-z].*trace" $HOME/.flrig-$SIDE/*.prefs | sort | uniq)
+		do
+			sed -i -e "s/^$S:1/$S:0/" $HOME/.flrig-$SIDE/*.prefs
+		done
+		echo >&2 "Flrig $SIDE Done."
+	
+		echo >&2 -e "\n=======================================\n"
+	
+		# Flmsg
+		echo >&2 "Initializing Flmsg $SIDE"
+		flmsg --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
+		PID_=$!
+		echo "flmsg running as PID $PID_"
+		echo -n "Waiting for flmsg to close"
+		END=$((SECONDS+20))
+		while pgrep flmsg >/dev/null 2>&1 && (( $SECONDS < $END ))
+		do
+			sleep 1
+			echo -n "."
+			WID=$(xdotool search --pid $PID_ 2>/dev/null)
+			[[ -n $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
+		done
+		(( $SECONDS > $END )) && break
+		echo "OK"
+		#sleep 1
+		#for WID in $(xdotool search --name "flmsg")
+		#do
+		#   xdotool windowclose $WID >/dev/null 2>&1
+		#   sleep 2
+		#done
+		WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs 10 || { echo "$HOME/.nbems-$SIDE/FLMSG.prefs never created."; break; }
+		sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
+				 -e "s/^mycall:.*/mycall:$MYCALL/" \
+				 -e "s/^myname:.*/myname:$MYNAME/" \
+		$HOME/.nbems-$SIDE/FLMSG.prefs
+		echo >&2 "Flmsg $SIDE Done."
 
-	# Fldigi
-	echo >&2 "Initializing Fldigi $SIDE"
-   rm -rf $HOME/.fldigi-$SIDE
-   rm -rf $HOME/.nbems-$SIDE
-   fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
-   PID_FLDIGI=$!
-	#sleep 5
-   echo "fldigi running as PID $PID_FLDIGI"
-   echo -n "Waiting for fldigi"
-   while pgrep fldigi >/dev/null 2>&1
-   do
-      echo -n "."
-      WID=$(xdotool search --pid $PID_FLDIGI 2>/dev/null)
-      [[ -n $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
-      sleep 2
-   done
-   echo "OK"
-   WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml 10 || Die "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."
-   pkill -SIGTERM fldigi
-   FLMSG_STRING="/usr/bin/flmsg --flmsg-dir $HOME/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
-	sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
-	-e "s/<AUDIOIO>.*<\/AUDIOIO>/<AUDIOIO>2<\/AUDIOIO>/" \
-	-e "s/<high_signal_level>.*<\/high_signal_level>/<high_signal_level>-5<\/high_signal_level>/" \
-	-e "s/<over_signal_level>.*<\/over_signal_level>/<over_signal_level>-2<\/over_signal_level>/" \
-	-e "s/<ENABLE_AUDIO_ALERTS>.*<\/ENABLE_AUDIO_ALERTS>/<ENABLE_AUDIO_ALERTS>0<\/ENABLE_AUDIO_ALERTS>/" \
-   -e "s/<PORTINDEVICE>.*<\/PORTINDEVICE>/<PORTINDEVICE>pulse<\/PORTINDEVICE>/" \
-   -e "s/<PORTININDEX>.*<\/PORTININDEX>/<PORTININDEX>-1<\/PORTININDEX>/" \
-   -e "s/<PORTOUTDEVICE>.*<\/PORTOUTDEVICE>/<PORTOUTDEVICE><\/PORTOUTDEVICE>/" \
-   -e "s/<PORTOUTINDEX>.*<\/PORTOUTINDEX>/<PORTOUTINDEX>-1<\/PORTOUTINDEX>/" \
-   -e "s/<USE_GPIO_PTT>.*<\/USE_GPIO_PTT>/<USE_GPIO_PTT>${USE_GPIO_PTT[$SIDE]}<\/USE_GPIO_PTT>/" \
-   -e "s/<ENABLE_GPIO>.*<\/ENABLE_GPIO>/<ENABLE_GPIO>${GPIO_STATE[$SIDE]}<\/ENABLE_GPIO>/" \
-   -e "s/<GPIO_STATE>.*<\/GPIO_STATE>/<GPIO_STATE>${GPIO_STATE[$SIDE]}<\/GPIO_STATE>/" \
-   -e "s/<XMLRPC_PORT>.*<\/XMLRPC_PORT>/<XMLRPC_PORT>${XML_PORT[$SIDE]}<\/XMLRPC_PORT>/" \
--e "s/<KISS_IO_PORT>.*<\/KISS_IO_PORT>/<KISS_IO_PORT>${KISS_IO_PORT[$SIDE]}<\/KISS_IO_PORT>/" \
-   -e "s/<KISS_OUT_PORT>.*<\/KISS_OUT_PORT>/<KISS_OUT_PORT>${KISS_OUT_PORT[$SIDE]}<\/KISS_OUT_PORT>/" \
-   -e "s/<ARQ_PORT>.*<\/ARQ_PORT>/<ARQ_PORT>${ARQ_PORT[$SIDE]}<\/ARQ_PORT>/" \
-   -e "s/<FLRIG_IP_PORT>.*<\/FLRIG_IP_PORT>/FLRIG_IP_PORT>${FLRIG_PORT[$SIDE]}<\/FLRIG_IP_PORT>/" \
-   -e "s/<XMLLOG_PORT>.*<\/XMLLOG_PORT>/XMLLOG_PORT>${XMLLOG_PORT[$SIDE]}<\/XMLLOG_PORT>/" \
-   -e "s/<FSQLOWERCASE>.*<\/FSQLOWERCASE>/<FSQLOWERCASE>1<\/FSQLOWERCASE>/" \
-   -e "s/<FSQSHOWMONITOR>.*<\/FSQSHOWMONITOR>/<FSQSHOWMONITOR>1<\/FSQSHOWMONITOR>/" \
-   -e "s|<FLMSG_PATHNAME>.*</FLMSG_PATHNAME>|<FLMSG_PATHNAME>$FLMSG_STRING</FLMSG_PATHNAME>|" \
-   -e "s/<REVERSEAUDIO>.*<\/REVERSEAUDIO>/<REVERSEAUDIO>${REVERSEAUDIO[$SIDE]}<\/REVERSEAUDIO>/" \
-   -e "s/<REVERSERXAUDIO>.*<\/REVERSERXAUDIO>/<REVERSERXAUDIO>${REVERSEAUDIO[$SIDE]}<\/REVERSERXAUDIO>/" \
-   -e "s/<MYCALL>.*<\/MYCALL>/<MYCALL>$MYCALL<\/MYCALL>/" \
-   -e "s/<MYNAME>.*<\/MYNAME>/<MYNAME>$MYNAME<\/MYNAME>/" \
-   -e "s/<OPERCALL>.*<\/OPERCALL>/<OPERCALL>$MYCALL<\/OPERCALL>/" \
-   $HOME/.fldigi-$SIDE/fldigi_def.xml 
-	echo >&2 "Fldigi $SIDE Done."
+		echo >&2 -e "\n=======================================\n"
 	
-	echo >&2 -e "\n=======================================\n"
+		# Flamp (Fldigi must be running to start Flamp)
+		echo >&2 "Initializing Flamp $SIDE"
+		echo "Starting fldigi"
+		fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
+		echo -n "Waiting for fldigi to complete startup"
+		END=$((SECONDS+20))
+		while ! ss -plnt state listening | grep -E ":${XML_PORT[$SIDE]}.*fldigi" &>/dev/null && (( $SECONDS < $END ))
+		do
+			sleep 1
+			echo -n "."
+		done
+		(( $SECONDS > $END )) && break
+		echo "OK"
+		echo "Starting flamp"
+		flamp --config-dir $HOME/.nbems-$SIDE --xmlrpc-server-port ${XML_PORT[$SIDE]} >/dev/null 2>&1 &
+		PID_=$!
+		echo "flamp running as PID $PID_"
+		END=$((SECONDS+20))
+		while pgrep flamp &>/dev/null && (( $SECONDS < $END ))
+		do
+			FLAMP_WIDS="$(xdotool search --pid $PID_ | sort -r | xargs)"
+			if [[ -n $FLAMP_WIDS ]]
+			then
+				for WID in $FLAMP_WIDS
+				do
+					xdotool windowclose $WID >/dev/null 2>&1
+				done
+			fi
+			sleep 1
+		done
+		(( $SECONDS > $END )) && break
+		echo "OK"
+		WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs 10 || { echo  "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."; break; }
+		pkill -SIGTERM fldigi
+		sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
+				-e "s/^socket_port:.*/xmlrpc_port:${ARQ_PORT[$SIDE]}/" \
+				-e "s/^mycall:.*/mycall:$MYCALL/" \
+				-e "s/^myinfo:.*/myinfo:$MYNAME/" \
+		$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs
+		echo >&2 "Flamp $SIDE Done."
 	
-	# Flrig
-	rm -rf $HOME/.flrig-$SIDE
-	echo >&2 "Initializing Flrig $SIDE"
-	flrig --debug-level 0 --config-dir $HOME/.flrig-$SIDE &
-   PID_=$!
-   echo "flrig running as PID $PID_"
-   echo -n "Waiting for flrig"
-   while pgrep flrig >/dev/null 2>&1
-   do
-      sleep 2
-      echo -n "."
-      FLRIG_WINDOWS="$(xdotool search --pid $PID_ 2>/dev/null | sort | xargs)"
-      if [[ -n $FLRIG_WINDOWS ]]
-      then
-         for WID in $FLRIG_WINDOWS
-         do
-   	      xdotool windowclose $WID 2>/dev/null 1>/dev/null
-         done
-      fi
-   done
-   echo "OK"
-   pkill -SIGTERM flrig
-   sed -i -e "s/^xmlport:.*/xmlport:${FLRIG_PORT[$SIDE]}/" $HOME/.flrig-$SIDE/NONE.prefs
-   echo "xmlport:${FLRIG_PORT[$SIDE]}" >> $HOME/.flrig-$SIDE/flrig.prefs
-   for S in $(grep -ho "^[a-z].*trace" $HOME/.flrig-$SIDE/*.prefs | sort | uniq)
-   do
-   	sed -i -e "s/^$S:1/$S:0/" $HOME/.flrig-$SIDE/*.prefs
-   done
-	echo >&2 "Flrig $SIDE Done."
+		echo >&2 -e "\n=======================================\n"
 	
-	echo >&2 -e "\n=======================================\n"
-	
-	# Flmsg
-	echo >&2 "Initializing Flmsg $SIDE"
-   flmsg --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
-   PID_=$!
-   echo "flmsg running as PID $PID_"
-   echo -n "Waiting for flmsg to close"
-   while pgrep flmsg >/dev/null 2>&1
-   do
-      sleep 2
-      echo -n "."
-      WID=$(xdotool search --pid $PID_ 2>/dev/null)
-      [[ -n $WID ]] && xdotool windowclose $WID >/dev/null 2>&1
-   done
-   echo "OK"
-   #sleep 1
-   #for WID in $(xdotool search --name "flmsg")
-   #do
-   #   xdotool windowclose $WID >/dev/null 2>&1
-	#   sleep 2
-   #done
-   WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs 10 || Die "$HOME/.nbems-$SIDE/FLMSG.prefs never created."
-	pkill -SIGTERM flmsg
-   sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
-          -e "s/^mycall:.*/mycall:$MYCALL/" \
-          -e "s/^myname:.*/myname:$MYNAME/" \
-   $HOME/.nbems-$SIDE/FLMSG.prefs
-	echo >&2 "Flmsg $SIDE Done."
-
-	echo >&2 -e "\n=======================================\n"
-	
-	# Flamp (Fldigi must be running to start Flamp)
-	echo >&2 "Initializing Flamp $SIDE"
-   echo "Starting fldigi"
-   fldigi --config-dir $HOME/.fldigi-$SIDE --flmsg-dir $HOME/.nbems-$SIDE >/dev/null 2>&1 &
-   echo -n "Waiting for fldigi to complete startup"
-   while ! ss -plnt state listening | grep -E ":${XML_PORT[$SIDE]}.*fldigi" &>/dev/null
-   do
-      sleep 1
-      echo -n "."
-   done
-   echo "OK"
-   echo "Starting flamp"
-   flamp --config-dir $HOME/.nbems-$SIDE --xmlrpc-server-port ${XML_PORT[$SIDE]} >/dev/null 2>&1 &
-   PID_=$!
-   echo "flamp running as PID $PID_"
-   while pgrep flamp &>/dev/null
-   do
-      FLAMP_WIDS="$(xdotool search --pid $PID_ | sort -r | xargs)"
-      if [[ -n $FLAMP_WIDS ]]
-      then
-         for WID in $FLAMP_WIDS
-         do
-	         xdotool windowclose $WID >/dev/null 2>&1
-         done
-      fi
-	   sleep 1
-   done
-   echo "OK"
-   WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs 10 || Die "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."
-   pkill -SIGTERM flamp
-	pkill -SIGTERM fldigi
-   sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
-   		-e "s/^socket_port:.*/xmlrpc_port:${ARQ_PORT[$SIDE]}/" \
-         -e "s/^mycall:.*/mycall:$MYCALL/" \
-         -e "s/^myinfo:.*/myinfo:$MYNAME/" \
-   $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs
-	echo >&2 "Flamp $SIDE Done."
-	
-	echo >&2 -e "\n=======================================\n"
-	
-	# Flarq
-	echo >&2 "Initializing Flarq $SIDE"
-   sudo sed -i -e "s/arq-server-port.*/arq-server-port ${ARQ_PORT[$SIDE]}/" \
-   		/usr/share/applications/flarq-$SIDE.desktop \
-   		/usr/share/applications/flarq-$SIDE.template
-	echo >&2 "Flarq $SIDE Done."
-	echo >&2 -e "\n=======================================\n"
+		# Flarq
+		echo >&2 "Initializing Flarq $SIDE"
+		sudo sed -i -e "s/arq-server-port.*/arq-server-port ${ARQ_PORT[$SIDE]}/" \
+				/usr/share/applications/flarq-$SIDE.desktop \
+				/usr/share/applications/flarq-$SIDE.template
+		echo >&2 "Flarq $SIDE Done."
+		echo >&2 -e "\n=======================================\n"
+		COMPLETED="TRUE"
+	done
+	if [[ $COMPLETED == "FALSE" ]]
+	then 
+		yad --info --center --text-align=center --buttons-layout=center \
+			--title="$TITLE" \
+			--text="<b><span color='RED'>Something went wrong!</span></b>" \
+			--borders=10 --button="Try Again":1 --button="Quit":0
+		(( $? != 1 )) && Die "Bootstrap Failed! Run '$0 -f' to try again."
+	fi
 done
 
 MSG_TEXT="<b><span color='blue'>Nexus DR-X bootstrap complete</span></b>
