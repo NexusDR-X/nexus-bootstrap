@@ -258,6 +258,16 @@ shift $((${OPTIND} - 1)) ## shift options
 
 trap SafeExit EXIT INT TERM SIGINT
 
+#######################################################################
+## Determine OS
+eval $(cat /etc/*-release)
+if [[ ${VERSION_CODENAME^^} != "BULLSEYE" ]]
+then
+	echo >&2 -e "\033[1;33;41;5mERROR! ERROR! ERROR! \033[0m\033[1;33m This script will only run with RaspiOS \"Bullseye\" OS! \033[0m"
+	echo >&2 -e "\n\033[1;33mPlease follow the directions in the Wiki at https://github.com/NexusDR-X/nexus-bootstrap/wiki \033[0m\n"
+	exit 1
+fi
+
 # Remove any existing reference to this script from $AUTOSTART
 # because we only want to run this once
 sudo sed -i "/@lxterminal .*${SCRIPT_NAME}.*/d" $AUTOSTART
