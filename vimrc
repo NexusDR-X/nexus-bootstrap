@@ -29,4 +29,5 @@ syntax on " turn on syntax checking (after background is set)
 hi Comment cterm=NONE
 " default non-text (formating) characters (default bold blue)
 hi NonText term=bold cterm=bold ctermfg=0 " bold black --> IE: grey
-
+" Sample command W
+command W :execute ':silent w !sudo tee % > /dev/null' | :edit!
