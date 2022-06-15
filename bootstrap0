@@ -474,8 +474,8 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Pause
-echo >&2 "------>  Rebooting in 7 seconds..."
-echo >&2 "------>  To ABORT the bootstrap process, press Ctrl-C. DO NOT do this unless instructed."
+echo >&2 "------>  Bootsrap 1 of 2 completed. Rebooting in 7 seconds, then bootstrap 2 of 2 will run..."
+echo >&2 "------>  To ABORT the bootstrap process, press Ctrl-C. DO NOT do this unless instructed!"
 echo >&2
 sleep 7
 

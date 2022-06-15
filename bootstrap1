@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.7
+#-    version         ${SCRIPT_NAME} 2.2.8
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -583,7 +583,7 @@ do
 	fi
 done
 
-MSG_TEXT="<b><span color='blue'>Nexus DR-X bootstrap complete</span></b>
+MSG_TEXT="<b><span color='blue'>Nexus DR-X bootstrap 2 of 2 complete</span></b>
 
 Click <b>Open Main Menu Editor</b> below to customize your <b>Main</b> and <b>Hamradio</b> menu layouts.
 
@@ -596,6 +596,6 @@ yad --info --center --text-align=center --buttons-layout=center \
 (( $? == 1 )) && setsid gtk-launch alacarte &>/dev/null
 
 #rm -f $HOME/DO_NOT_DELETE_THIS_FILE
-echo >&2 "Initialization complete. Close this Terminal window."
+echo >&2 "Bootstrap 2 of 2 complete. Close this Terminal window."
 #shutdown -r now
 
