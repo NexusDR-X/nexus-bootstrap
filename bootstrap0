@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.1.3
+# version 1.1.4
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -38,8 +38,7 @@ function CheckInternet() {
 	# Check for Internet connectivity
 	if ! ping -q -w 1 -c 1 github.com &>/dev/null
 	then
-		echo >&2 "No internet connection detected. Connect this Pi to the Internet and run this script again." 
-		exit 1
+		Error "No internet connection detected. Connect this Pi to the Internet and run this script again." 
 	fi
 }
 
@@ -176,6 +175,7 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ## Update installed packages
 echo >&2 "------>  Update installed OS and packages..."
+sudo apt-get -y --fix-broken install || Error "apt-get --fix-broken install failed"
 sudo apt-get -y clean || Error "apt-get clean failed"
 sudo apt-get update || Error "apt-get update failed"
 sudo apt-get -y autoremove || Error "apt-get autoremove failed"
