@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.1.5
+# version 1.1.6
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -175,7 +175,17 @@ echo >&2 -e "------>  Done.\n______"
 #######################################################################
 ## Update installed packages
 echo >&2 "------>  Update installed OS and packages..."
-#sudo apt-get -y --fix-broken install || Error "apt-get --fix-broken install failed"
+let T=60
+echo >&2 "Checking if apt or apt-get is already running. Waiting up to $T seconds.."
+while (( $T > 0 ))
+do
+ 	[[ -z $(pgrep -x 'apt|apt-get') ]] && break
+   sleep 1
+   ((T--))
+done
+(( $T == 0 )) && Error "Could not update/install pacakges. Another apt is running." 
+echo >&2 "OK to proceed with package updates and installs"
+sudo apt-get -y --fix-broken install || Error "apt-get --fix-broken install failed"
 sudo apt-get -y clean || Error "apt-get clean failed"
 sudo apt-get update || Error "apt-get update failed"
 sudo apt-get -y autoremove || Error "apt-get autoremove failed"
