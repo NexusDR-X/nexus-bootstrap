@@ -210,7 +210,7 @@ echo >&2 -e "------>  Done.\n______"
 echo>&2 "------> Force install libax25 due to conflict with libc6"
 pushd . >/dev/null
 cd $HOME
-apt download $APP
+apt download libax25
 popd >/dev/null
 sudo dpkg -i --force-overwrite $HOME/libax25_*.deb || Error "Error installing libax25"
 rm -f $HOME/libax25_*
