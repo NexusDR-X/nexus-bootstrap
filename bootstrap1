@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.8
+#-    version         ${SCRIPT_NAME} 2.2.9
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -424,7 +424,7 @@ do
 		done
 		(( $SECONDS > $END )) && break
 		echo "OK"
-		WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml 10 || { echo  "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."; break; }
+		WaitFor $HOME/.fldigi-$SIDE/fldigi_def.xml 15 || { echo  "$HOME/.fldigi-$SIDE/fldigi_def.xml never created."; break; }
 		FLMSG_STRING="/usr/bin/flmsg --flmsg-dir $HOME/.nbems-$SIDE --server-port ${FLMSG_WEB_PORT[$SIDE]} -title \"Flmsg ($SIDE radio)\""
 		sed -i -e "s/<SIGONRIGHTCHANNEL>.*<\/SIGONRIGHTCHANNEL>/<SIGONRIGHTCHANNEL>0<\/SIGONRIGHTCHANNEL>/" \
 		-e "s/<AUDIOIO>.*<\/AUDIOIO>/<AUDIOIO>2<\/AUDIOIO>/" \
@@ -512,7 +512,7 @@ do
 		#   xdotool windowclose $WID >/dev/null 2>&1
 		#   sleep 2
 		#done
-		WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs 10 || { echo "$HOME/.nbems-$SIDE/FLMSG.prefs never created."; break; }
+		WaitFor $HOME/.nbems-$SIDE/FLMSG.prefs 15 || { echo "$HOME/.nbems-$SIDE/FLMSG.prefs never created."; break; }
 		sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
 				 -e "s/^mycall:.*/mycall:$MYCALL/" \
 				 -e "s/^myname:.*/myname:$MYNAME/" \
@@ -553,7 +553,7 @@ do
 		done
 		(( $SECONDS > $END )) && break
 		echo "OK"
-		WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs 10 || { echo  "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."; break; }
+		WaitFor $HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs 15 || { echo  "$HOME/.nbems-$SIDE/FLAMP/FLAMP.prefs never created."; break; }
 		pkill -SIGTERM fldigi
 		sed -i -e "s/^xmlrpc_port:.*/xmlrpc_port:${XML_PORT[$SIDE]}/" \
 				-e "s/^socket_port:.*/xmlrpc_port:${ARQ_PORT[$SIDE]}/" \
