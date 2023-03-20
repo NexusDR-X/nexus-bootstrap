@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.1.7
+# version 1.2.0
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -327,7 +327,7 @@ then
 	echo -e "# Enable Fe-Pi audio card\ndtoverlay=fe-pi-audio"  | sudo tee --append /boot/config.txt 1>/dev/null
 fi
 echo >&2 -e "------>  Done.\n______"
-echo >&2 "------>  Add nexus-audio repo (PulseAudio configuration for Fe-Pi Audio Hat)..."
+echo >&2 "------>  Add nexus-audio repo (audio configuration for Fe-Pi Audio Hat)..."
 rm -rf "$LOCAL_GIT_REPO_ROOT/nexus-audio"
 git -C "$LOCAL_GIT_REPO_ROOT" clone "$NEXUS_AUDIO_GIT_URL"
 pushd . >/dev/null
