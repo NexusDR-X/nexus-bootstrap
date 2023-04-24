@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.2.0
+# version 1.2.1
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -160,7 +160,7 @@ KEY_PATH="/usr/share/keyrings/nexus-archive-keyring.gpg"
 #sudo curl -s --compressed -o /etc/apt/sources.list.d/nexus.list #"${GITHUBIO_REPO_URL}/nexus.list"
 # Here's the new way to add an apt repo and key:
 curl -s --compressed "${GITHUBIO_REPO_URL}/KEY.gpg" | sudo gpg --dearmor | sudo tee ${KEY_PATH} 1>/dev/null || Error "Failed to get Nexus DR-X repo key"
-curl -s -o /tmp/${NEXUS_LIST} ${GITHUBIO_REPO_URL}/${NEXUS_LIST} || Error "Failed to get Nexus Dr-X repo URL"
+curl -s -o /tmp/${NEXUS_LIST} ${GITHUBIO_REPO_URL}/${NEXUS_LIST} || Error "Failed to get Nexus DR-X repo URL"
 sed -i -e "s|^deb |deb [signed-by=${KEY_PATH}] |" /tmp/${NEXUS_LIST}
 sudo mv -f /tmp/${NEXUS_LIST} /etc/apt/sources.list.d/
 cat > /tmp/99nexus << EOF
@@ -205,8 +205,33 @@ sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfatprogs \
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
+## Prompt for call sign and name for use in bootstrap1 script
+TITLE="Nexus DR-X Bootstrap part 1 of 2"
+MSG_TEXT="<b>Minimal configuration of Fldigi, Flmsg, etc. calls
+for your call sign and name. Provide them here if you like. If 
+you don't provide them here, you'll be prompted again during 
+part 2 of the bootstrap.</b>
+"
+MYCALL="N0CALL"
+MYNAME="No One"
+MSG=$(yad --center --borders=20 \
+     	--title="$TITLE" --text-align=center \
+     	--text="$MSG_TEXT" --form \
+     	--field="Operator Callsign" "$MYCALL" \
+     	--field="Operator Name" "$MYNAME" \
+     	--buttons-layout=center \
+    	--button="Cancel":1 --button="OK":0)
+if [[ $? == 0 ]]
+then
+  	MYCALL="$(echo $MSG | awk 'BEGIN {FS="|" } { print $1 }')"
+	MYNAME="$(echo $MSG | awk 'BEGIN {FS="|" } { print $2 }')"
+fi
+MYCALL="${MYCALL^^}"
+
+
+#######################################################################
 ## Immediately install libax25 because it requires a force install due
-## to it's sharing a header file with libc6
+## to sharing a header file with libc6
 echo>&2 "------> Force install libax25 due to conflict with libc6"
 pushd . >/dev/null
 cd $HOME
@@ -496,7 +521,7 @@ echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Pause
-echo >&2 "------>  Bootsrap 1 of 2 completed. Rebooting in 7 seconds, then bootstrap 2 of 2 will run..."
+echo >&2 "------>  Bootstrap 1 of 2 completed. Rebooting in 7 seconds, then bootstrap 2 of 2 will run..."
 echo >&2 "------>  To ABORT the bootstrap process, press Ctrl-C. DO NOT do this unless instructed!"
 echo >&2
 sleep 7
@@ -505,7 +530,7 @@ sleep 7
 ## Set autostart to launch nexus_os_bootstrap1 at next startup
 echo >&2 "------>  Set autostart to launch bootstrap1 at next startup..."
 #sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/nexusdr-x.github.io\/nexus-bootstrap\/nexus_os_bootstrap1)'" $AUTOSTART
-sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/bootstrap1 -f" $AUTOSTART
+sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/bootstrap1 -f -c \"$MYCALL\" -n \"$MYNAME\"" $AUTOSTART
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
