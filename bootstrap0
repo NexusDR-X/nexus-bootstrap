@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.2.1
+# version 1.2.2
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -530,7 +530,7 @@ sleep 7
 ## Set autostart to launch nexus_os_bootstrap1 at next startup
 echo >&2 "------>  Set autostart to launch bootstrap1 at next startup..."
 #sudo sed -i "/@pcmanfm .*/a @lxterminal -e 'bash <(curl -sL https:\/\/nexusdr-x.github.io\/nexus-bootstrap\/nexus_os_bootstrap1)'" $AUTOSTART
-sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/bootstrap1 -f -c \"$MYCALL\" -n \"$MYNAME\"" $AUTOSTART
+sudo sed -i "/@pcmanfm .*/a @lxterminal -e /usr/local/sbin/bootstrap1 -f -c $MYCALL -n \"$MYNAME\"" $AUTOSTART
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
