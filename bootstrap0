@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.2.2
+# version 1.2.3
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -173,7 +173,7 @@ sudo mv -f /tmp/99nexus /etc/apt/preferences.d/
 echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
-## Update installed packages
+## Prepare for package updates
 echo >&2 "------>  Update installed OS and packages..."
 let T=60
 echo >&2 "Checking if apt or apt-get is already running. Waiting up to $T seconds.."
@@ -188,24 +188,10 @@ echo >&2 "OK to proceed with package updates and installs"
 sudo apt-get -y --fix-broken install || Error "apt-get --fix-broken install failed"
 sudo apt-get -y clean || Error "apt-get clean failed"
 sudo apt-get update || Error "apt-get update failed"
-sudo apt-get -y autoremove || Error "apt-get autoremove failed"
-sudo apt-get -y upgrade	|| Error "apt-get upgrade failed"
-sudo apt-get -y dist-upgrade || Error "apt-get dist-upgrade failed"
-sudo apt-get -y autoremove || Error "apt-get autoremove failed"
-echo >&2 -e "------>  Done.\n______"
-
-#######################################################################
-## Install additional packages
-echo >&2 "------>  Install additional required packages for Nexus DR-X..."
-sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfatprogs \
-		yad dosfstools dos2unix autoconf automake libtool cmake \
-		extra-xdg-menus bc dnsutils libgtk-3-bin jq xdotool moreutils build-essential \
-		aptitude hdparm watchdog gettext git imagemagick socat intltool libgtk-3-dev \
-		autotools-dev || Error "Could not install additional packages"
-echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Prompt for call sign and name for use in bootstrap1 script
+sudo apt-get -y install yad
 TITLE="Nexus DR-X Bootstrap part 1 of 2"
 MSG_TEXT="<b>Minimal configuration of Fldigi, Flmsg, etc. calls
 for your call sign and name. Provide them here if you like. If 
@@ -228,6 +214,23 @@ then
 fi
 MYCALL="${MYCALL^^}"
 
+#######################################################################
+## Update installed pacakges
+sudo apt-get -y autoremove || Error "apt-get autoremove failed"
+sudo apt-get -y upgrade	|| Error "apt-get upgrade failed"
+sudo apt-get -y dist-upgrade || Error "apt-get dist-upgrade failed"
+sudo apt-get -y autoremove || Error "apt-get autoremove failed"
+echo >&2 -e "------>  Done.\n______"
+
+#######################################################################
+## Install additional packages
+echo >&2 "------>  Install additional required packages for Nexus DR-X..."
+sudo apt-get -y install vim tcpdump lsof gpm telnet minicom links exfatprogs \
+		dosfstools dos2unix autoconf automake libtool cmake \
+		extra-xdg-menus bc dnsutils libgtk-3-bin jq xdotool moreutils build-essential \
+		aptitude hdparm watchdog gettext git imagemagick socat intltool libgtk-3-dev \
+		autotools-dev || Error "Could not install additional packages"
+echo >&2 -e "------>  Done.\n______"
 
 #######################################################################
 ## Immediately install libax25 because it requires a force install due
