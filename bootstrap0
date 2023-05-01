@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# version 1.2.3
+# version 1.2.4
 # Author: Steve Magnuson, AG7GN
 #
 # This script prepares the stock "Raspberry Pi OS with desktop" Bullseye image from 
@@ -215,7 +215,7 @@ fi
 MYCALL="${MYCALL^^}"
 
 #######################################################################
-## Update installed pacakges
+## Update installed packages
 sudo apt-get -y autoremove || Error "apt-get autoremove failed"
 sudo apt-get -y upgrade	|| Error "apt-get upgrade failed"
 sudo apt-get -y dist-upgrade || Error "apt-get dist-upgrade failed"
