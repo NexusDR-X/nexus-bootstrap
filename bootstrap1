@@ -33,7 +33,7 @@
 #%      
 #================================================================
 #- IMPLEMENTATION
-#-    version         ${SCRIPT_NAME} 2.2.10
+#-    version         ${SCRIPT_NAME} 2.2.12
 #-    author          Steve Magnuson, AG7GN
 #-    license         CC-BY-SA Creative Commons License
 #-    script_id       0
@@ -335,8 +335,12 @@ set_fepi.sh
 
 
 # Run the Updater to install commonly used apps
-nexus-updater.sh libax25,hamlib
-nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
+if nexus-updater.sh libax25,hamlib && nexus-updater.sh ax25-apps,ax25-tools,fldigi,flmsg,flrig,flamp,direwolf,pat,nexus-backup-restore
+then
+	echo >&2 "${SCRIPT_NAME}: Applications have been installed"
+else
+	Die "${SCRIPT_NAME}: Applications installation failed. Do you have a working Internet connection?"
+fi
 
 ####### Install nexus-utilities and set up desktops
 #nexus-updater.sh nexus-utilities,nexus-backup-restore
